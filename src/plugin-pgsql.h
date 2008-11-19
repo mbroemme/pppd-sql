@@ -37,6 +37,9 @@
 #include <pppd/chap-new.h>
 #include <pppd/pppd.h>
 
+/* postgresql includes. */
+#include <libpq-fe.h>
+
 /* global define to indicate that plugin only works with compile time pppd. */
 extern uint8_t pppd_version[];
 
