@@ -233,6 +233,9 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 			/* multiple user accounts found. */
 			error("Plugin %s: The column %s for %s is NULL in database\n", PLUGIN_NAME_MYSQL, field->name, name);
 
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
 			/* close the connection. */
 			mysql_close(&mysql);
 
