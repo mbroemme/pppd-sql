@@ -59,7 +59,7 @@ extern uint32_t pppd_pgsql_retry_query;
 /* extra option structure. */
 extern option_t options[];
 
-/* plugin initilization routine. */
+/* plugin initialization routine. */
 void plugin_init(
 	void
 );
