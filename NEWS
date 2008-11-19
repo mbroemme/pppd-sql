@@ -1,0 +1,5 @@
+Initial version 0.1.0 (2007-09-21)
+==================================
+
+    * initial version for PPP Server, providing PAP an CHAP authentication
+      via fixed MySQL database scheme.
