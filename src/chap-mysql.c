@@ -29,6 +29,19 @@
 /* chap plugin includes. */
 #include "chap-mysql.h"
 
+/* this function handles the mysql_error() result. */
+int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const uint8_t *error_message) {
+
+	/* show error header. */
+	warn("Plugin %s: Fatal Error Message (MySQL):\n", PLUGIN_NAME_MYSQL);
+
+	/* show the detailed error. */
+	warn("Plugin %s: * %d (%s): %s\n", PLUGIN_NAME_MYSQL, error_code, error_state, error_message);
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
 /* this function check the chap authentication information against a mysql database. */
 int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
 
@@ -60,7 +73,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	    pppd_mysql_column_ip	== NULL) {
 
 		/* something failed on mysql initialization. */
-		error("Plugin %s FAILURE: MySQL information are not complete\n", PLUGIN_NAME_MYSQL);
+		error("Plugin %s: MySQL information are not complete\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
 		return 0;
@@ -70,7 +83,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	if (mysql_init(&mysql) == NULL) {
 
 		/* something failed on mysql initialization. */
-		error("Plugin %s FAILURE: MySQL initialization failed\n", PLUGIN_NAME_MYSQL);
+		error("Plugin %s: MySQL initialization failed\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
 		return 0;
@@ -79,7 +92,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	/* set mysql connect timeout. */
 	if (mysql_options(&mysql, MYSQL_OPT_CONNECT_TIMEOUT, (uint8_t *)&pppd_mysql_connect_timeout) != 0) {
 
-		info("Plugin %s FAILURE: MySQL options are unknown\n", PLUGIN_NAME_MYSQL);
+		info("Plugin %s: MySQL options are unknown\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
 		return 0;
@@ -106,12 +119,12 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 				if (count == 1) {
 
 					/* something on establishing connection failed. */
-					warn("Plugin %s FAILURE: %d (%s): %s\n", PLUGIN_NAME_MYSQL, mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
+					pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
 				}
 			} else {
 
 				/* found working mysql server. */
-				info("Plugin %s SUCCESS: Using MySQL server %s\n", PLUGIN_NAME_MYSQL, token_mysql_host);
+				info("Plugin %s: Using MySQL server %s\n", PLUGIN_NAME_MYSQL, token_mysql_host);
 
 				/* indicate that we found working mysql server. */
 				found = 1;
@@ -133,7 +146,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	if (found == 0) {
 
 		/* something on establishing connection failed. */
-		error("Plugin %s FAILURE: No working MySQL server found\n", PLUGIN_NAME_MYSQL);
+		error("Plugin %s: No working MySQL server found\n", PLUGIN_NAME_MYSQL);
 
 		/* close the connection. */
 		mysql_close(&mysql);
@@ -176,7 +189,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	if (found == 0) {
 
 		/* something on executing query failed. */
-		error("Plugin %s FAILURE: %d (%s): %s\n", PLUGIN_NAME_MYSQL, mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
+		pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
 
 		/* close the connection. */
 		mysql_close(&mysql);
@@ -192,7 +205,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		if (mysql_field_count(&mysql) == 0) {
 
 			/* something on executing query failed. */
-			error("Plugin %s FAILURE: %d (%s): %s\n", PLUGIN_NAME_MYSQL, mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
+			pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
 
 			/* close the connection. */
 			mysql_close(&mysql);
@@ -206,7 +219,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	if ((mysql_num_rows(result) > 1) && (pppd_mysql_ignore_multiple == 0)) {
 
 		/* multiple user accounts found. */
-		error("Plugin %s FAILURE: Multiple accounts for %s found in database\n", PLUGIN_NAME_MYSQL, name);
+		error("Plugin %s: Multiple accounts for %s found in database\n", PLUGIN_NAME_MYSQL, name);
 
 		/* close the connection. */
 		mysql_close(&mysql);
@@ -231,7 +244,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		if ((row[count] == NULL) && (pppd_mysql_ignore_null == 0)) {
 
 			/* multiple user accounts found. */
-			error("Plugin %s FAILURE: The column %s for %s is NULL in database\n", PLUGIN_NAME_MYSQL, field->name, name);
+			error("Plugin %s: The column %s for %s is NULL in database\n", PLUGIN_NAME_MYSQL, field->name, name);
 
 			/* clear the memory with the password, so nobody is able to dump it. */
 			memset(secret_name, 0, sizeof(secret_name));
@@ -264,7 +277,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 			if (inet_aton(row[count], (struct in_addr *) &client_ip) == 0) {
 
 				/* error on converting ip address.*/
-				error("Plugin %s FAILURE: IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
+				error("Plugin %s: IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
 
 				/* clear the memory with the password, so nobody is able to dump it. */
 				memset(secret_name, 0, sizeof(secret_name));
