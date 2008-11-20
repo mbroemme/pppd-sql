@@ -3,5 +3,14 @@ Features and functionality which should be added in the future.
     * Well no real feature but needs to be done. Testing, testing and
       more testing. Maybe there exist unknown bugs. :)
 
+    * Add support for encrypted Password storage inside database.
+      (MD5 or Crypt)
+
+    * Add support for other database backends. (Firebird/InterBase,
+      Ingres and SQLite)
+
+    * Add support for authentication fallback against usual files
+      '/etc/ppp/pap-secrets' or '/etc/ppp/chap-secrets'.
+
 Look at the AUTHORS file if you want help me with 'pppd-sql', or
 if you have other interesting features which should be added.
