@@ -38,6 +38,6 @@ install-exec-hook:
 	$(rmpath) ${DESTDIR}${libdir}/pgsql.la
 
 # remove modules on uninstallation.
-uninstall-exec-hook:
+uninstall-hook:
 	$(rmpath) -f ${DESTDIR}${libdir}/mysql.so
 	$(rmpath) -f ${DESTDIR}${libdir}/pgsql.so
