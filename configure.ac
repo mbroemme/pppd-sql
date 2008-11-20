@@ -12,10 +12,37 @@ AC_CONFIG_HEADERS([config.h:config.h.in])
 AC_PREREQ(2.53)
 AC_REVISION($Revision: 1.6 $)
 
+# checking for required binaries.
+AC_PATH_PROG([rmpath], [rm], [no])
+if test "$rmpath" = "no"; then
+	AC_MSG_ERROR([*** rm binary is required, install coreutils files])
+fi
+AC_PATH_PROG([sedpath], [sed], [no])
+if test "$sedpath" = "no"; then
+	AC_MSG_ERROR([*** sed binary is required, install sed files])
+fi
+
+# checking if static is enabled, which is impossible to use.
+if test "${enable_static+set}" = set; then
+	AC_MSG_ERROR([*** static linking is not possible, dlopen() is required by module loading])
+fi
+
 # checking for programs.
+AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AC_PROG_CC
+
+# checking for pppd binary.
+AC_PATH_PROG([pppdpath], [pppd], [no])
+if test "$pppdpath" = "no"; then
+	AC_MSG_ERROR([*** pppd binary is required, install ppp server files])
+else
+	PPPD_VERSION="$(${pppdpath} --version 2>&1 | ${sedpath} 's/.* //')"
+fi
+
+# setting new default library directory.
+libdir="${libdir}/pppd/${PPPD_VERSION}"
 
 # checking for ppp include.
 AC_CHECK_HEADER([pppd/pppd.h], [], [AC_MSG_ERROR([*** pppd.h is required, install ppp header files])])
@@ -45,7 +72,7 @@ if test "$ac_cv_header_libpq_fe_h" = yes; then
 
 	# define the postgresql name and version.
 	AC_DEFINE_UNQUOTED(PLUGIN_NAME_PGSQL, "pgsql", [Plugin name as Prefix.])
-	AC_DEFINE_UNQUOTED(PLUGIN_VERSION_PGSQL, "$(pg_config --version | sed 's/.* //')", [Plugin version for PostgreSQL.])
+	AC_DEFINE_UNQUOTED(PLUGIN_VERSION_PGSQL, "$(pg_config --version | ${sedpath} 's/.* //')", [Plugin version for PostgreSQL.])
 else
 	AC_MSG_ERROR([*** postgresql is required, install postgresql library files])
 fi

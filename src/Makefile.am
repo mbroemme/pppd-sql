@@ -31,3 +31,13 @@ pgsql_la_CFLAGS		= @PGSQL_CFLAGS@
 pgsql_la_LDFLAGS	= @PGSQL_LDFLAGS@ \
 			  -module \
 			  -avoid-version
+
+# avoid installation of .la files.
+install-exec-hook:
+	$(rmpath) ${DESTDIR}${libdir}/mysql.la
+	$(rmpath) ${DESTDIR}${libdir}/pgsql.la
+
+# remove modules on uninstallation.
+uninstall-exec-hook:
+	$(rmpath) -f ${DESTDIR}${libdir}/mysql.so
+	$(rmpath) -f ${DESTDIR}${libdir}/pgsql.so
