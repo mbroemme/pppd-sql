@@ -1,6 +1,7 @@
 /*
- *  chap-mysql.c -- Challenge Handshake Authentication Protocol for the
- *                  Point-to-Point Protocol (PPP) via MySQL.
+ *  auth-mysql.c -- Challenge Handshake Authentication Protocol and Password
+ *                  Authentication Protocol for the Point-to-Point Protocol
+ *                  (PPP) via MySQL.
  *
  *  Copyright (c) 2008 Maik Broemme <mbroemme@plusserver.de>
  *
@@ -26,8 +27,8 @@
 #include "plugin-mysql.h"
 #include "str.h"
 
-/* chap plugin includes. */
-#include "chap-mysql.h"
+/* auth plugin includes. */
+#include "auth-mysql.h"
 
 /* this function handles the mysql_error() result. */
 int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const uint8_t *error_message) {
@@ -298,4 +299,14 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 
 	/* return status of password verification. */
 	return ok;
+}
+
+/* this function check the pap authentication information against a mysql database. */
+int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordlist **paddrs, struct wordlist **popts) {
+
+	/* TODO: implement this. */
+	error("Plugin %s: TODO: PAP Authentication will be implemented in 0.2.0\n", PLUGIN_NAME_MYSQL);
+
+	/* until it is implemented we deny every authentication request and terminate the link. */
+	return 0;
 }

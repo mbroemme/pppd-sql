@@ -3,12 +3,11 @@ AUTOMAKE_OPTIONS	= 1.6
 
 # library information and headers which should not be installed.
 lib_LTLIBRARIES		= mysql.la pgsql.la
-noinst_HEADERS		= chap.h chap-mysql.h chap-pgsql.h pap.h plugin-mysql.h plugin-pgsql.h str.h
+noinst_HEADERS		= auth-mysql.h auth-pgsql.h plugin.h plugin-mysql.h plugin-pgsql.h str.h
 
 # sources to compile.
-mysql_la_SOURCES	= chap.c \
-			  chap-mysql.c \
-			  pap.c \
+mysql_la_SOURCES	= auth-mysql.c \
+			  plugin.c \
 			  plugin-mysql.c \
 			  str.c
 # compile flags.
@@ -20,9 +19,8 @@ mysql_la_LDFLAGS	= @MYSQL_LDFLAGS@ \
 			  -avoid-version
 
 # sources to compile.
-pgsql_la_SOURCES	= chap.c \
-			  chap-pgsql.c \
-			  pap.c \
+pgsql_la_SOURCES	= auth-pgsql.c \
+			  plugin.c \
 			  plugin-pgsql.c \
 			  str.c
 

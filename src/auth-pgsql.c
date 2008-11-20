@@ -1,6 +1,7 @@
 /*
- *  chap-pgsql.c -- Challenge Handshake Authentication Protocol for the
- *                  Point-to-Point Protocol (PPP) via PostgreSQL.
+ *  auth-pgsql.c -- Challenge Handshake Authentication Protocol and Password
+ *                  Authentication Protocol for the Point-to-Point Protocol
+ *                  (PPP) via PostgreSQL.
  *
  *  Copyright (c) 2008 Maik Broemme <mbroemme@plusserver.de>
  *
@@ -29,8 +30,8 @@
 #include "plugin-pgsql.h"
 #include "str.h"
 
-/* chap plugin includes. */
-#include "chap-pgsql.h"
+/* auth plugin includes. */
+#include "auth-pgsql.h"
 
 /* this function handles the PQerrorMessage() result. */
 int32_t pppd__pgsql_error(uint8_t *error_message) {
@@ -334,4 +335,14 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 
 	/* return status of password verification. */
 	return ok;
+}
+
+/* this function check the pap authentication information against a postgresql database. */
+int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordlist **paddrs, struct wordlist **popts) {
+
+	/* TODO: implement this. */
+	error("Plugin %s: TODO: PAP Authentication will be implemented in 0.2.0\n", PLUGIN_NAME_PGSQL);
+
+	/* until it is implemented we deny every authentication request and terminate the link. */
+	return 0;
 }

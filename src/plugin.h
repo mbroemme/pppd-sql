@@ -1,6 +1,6 @@
 /*
- *  chap.c -- Challenge Handshake Authentication Protocol for the
- *            Point-to-Point Protocol (PPP) shared functions.
+ *  plugin.h -- Challenge Handshake Authentication Protocol for the
+ *              Point-to-Point Protocol (PPP) shared functions.
  *
  *  Copyright (c) 2008 Maik Broemme <mbroemme@plusserver.de>
  *
@@ -19,36 +19,35 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* generic includes. */
-#include <string.h>
+#ifndef _PLUGIN_H
+#define _PLUGIN_H
 
-/* plugin includes. */
-#include "chap.h"
+/* generic includes. */
+#include <stdint.h>
+
+/* client ip address must be stored in global variable, because at IPCP time
+ * we no longer know the username.
+ */
+extern uint32_t client_ip;
+
+/* this function set whether the peer must authenticate itself to us via CHAP. */
+int32_t pppd__chap_check(
+	void
+);
+
+/* this function set whether the peer must authenticate itself to us via PAP. */
+int32_t pppd__pap_check(
+	void
+);
 
 /* this function will look for a valid client ip address. */
-void pppd__ip_choose(uint32_t *addrp) {
-
-	/* set ip address to client one fetched from database. */
-	*addrp = client_ip;
-}
-
-/* this function set whether the peer must authenticate itself to us. */
-int32_t pppd__chap_check(void) {
-
-	/* return one, because we need to ask peer everytime for authentication. */
-	return 1;
-}
+void pppd__ip_choose(
+	uint32_t	*addrp
+);
 
 /* this function set whether the plugin is allowed to set client ip addresses. */
-int32_t pppd__allowed_address(uint32_t addr) {
+int32_t pppd__allowed_address(
+	uint32_t	addr
+);
 
-	/* check if ip address is equal to client address from database. */
-	if (addr != client_ip) {
-
-		/* seems that we are using an invalid ip address. */
-		return 0;
-	}
-
-	/* return one, because we are allowed to assign ip addresses. */
-	return 1;
-}
+#endif					/* _PLUGIN_H */

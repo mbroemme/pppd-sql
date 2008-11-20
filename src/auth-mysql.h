@@ -1,6 +1,7 @@
 /*
- *  chap-pgsql.h -- Challenge Handshake Authentication Protocol for the
- *                  Point-to-Point Protocol (PPP) via PostgreSQL.
+ *  auth-mysql.h -- Challenge Handshake Authentication Protocol and Password
+ *                  Authentication Protocol for the Point-to-Point Protocol
+ *                  (PPP) via MySQL.
  *
  *  Copyright (c) 2008 Maik Broemme <mbroemme@plusserver.de>
  *
@@ -19,21 +20,23 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-#ifndef _CHAP_PGSQL_H
-#define _CHAP_PGSQL_H
+#ifndef _AUTH_MYSQL_H
+#define _AUTH_MYSQL_H
 
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
  */
 extern uint32_t client_ip;
 
-/* this function handles the PQerrorMessage() result. */
-int32_t pppd__pgsql_error(
-	uint8_t		*error_message
+/* this function handles the mysql_error() result. */
+int32_t pppd__mysql_error(
+	uint32_t	error_code,
+	const uint8_t	*error_message,
+	const uint8_t	*error_state
 );
 
-/* this function check the chap authentication information against a postgresql database. */
-int32_t pppd__chap_verify_pgsql(
+/* this function check the chap authentication information against a mysql database. */
+int32_t pppd__chap_verify_mysql(
 	char		*name,
 	char		*ourname,
 	int		id,
@@ -44,4 +47,13 @@ int32_t pppd__chap_verify_pgsql(
 	int		message_space
 );
 
-#endif					/* _CHAP_PGSQL_H */
+/* this function check the pap authentication information against a mysql database. */
+int32_t pppd__pap_auth_mysql(
+	char		*user,
+	char		*passwd,
+	char		**msgp,
+	struct wordlist	**paddrs,
+	struct wordlist	**popts
+);
+
+#endif					/* _AUTH_MYSQL_H */

@@ -20,11 +20,11 @@
  */
 
 /* generic plugin includes. */
+#include "plugin.h"
 #include "plugin-pgsql.h"
 
-/* plugin chap includes. */
-#include "chap.h"
-#include "chap-pgsql.h"
+/* plugin auth includes. */
+#include "auth-pgsql.h"
 
 /* global define to indicate that plugin only works with compile time pppd. */
 uint8_t pppd_version[]			= VERSION;
@@ -78,6 +78,10 @@ void plugin_init(void) {
 	/* add hook for chap authentication. */
 	chap_check_hook		= pppd__chap_check;
 	chap_verify_hook	= pppd__chap_verify_pgsql;
+
+	/* add hook for pap authentication. */
+	pap_check_hook		= pppd__pap_check;
+	pap_auth_hook		= pppd__pap_auth_pgsql;
 
 	/* plugin is aware of assigning ip addresses on IPCP negotiation. */
 	ip_choose_hook		= pppd__ip_choose;
