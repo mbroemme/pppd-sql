@@ -1,0 +1,87 @@
+.\" Copyright (c) 2008 Maik Broemme <mbroemme@plusserver.de>
+.\"
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, write to the Free
+.\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
+.\" USA.
+.TH pppd-pgsql 8 2008-11-20 "The PPP PostgreSQL plugin"
+.SH NAME
+pgsql.so \- PostgreSQL authentication plugin for
+.BR pppd (8)
+.SH SYNOPSIS
+.B pppd
+[
+.I options
+]
+plugin pgsql.so
+.SH DESCRIPTION
+.LP
+The PostgreSQL plugin for pppd permits pppd to perform Password Authentication Protocol (PAP), Challenge Handshake Authentication Protocol (CHAP), MS-CHAP and MS-CHAPv2 authentication against a PostgreSQL server instead of the usual \fI/etc/ppp/pap-secrets\fP and \fI/etc/ppp/chap-secrets\fP files.
+.SH OPTIONS
+The PostgreSQL plugin introduces some additional pppd options:
+.TP
+\fBpgsql-host\fP \fI<host1:port>,<host2:port>\fP
+The PostgreSQL server host and port to connect. You can specifiy as many PostgreSQL servers as you want. The plugin itself has a simple failover algorithm. The first server is connected as often as specified in \fBpgsql-retry-connect\fP and if it failed the next server is tried until no more servers are available.
+.TP
+\fBpgsql-user\fP \fIusername\fP
+The PostgreSQL username for database authentication.
+.TP
+\fBpgsql-pass\fP \fIpassword\fP
+The PostgreSQL password for database authentication.
+.TP
+\fBpgsql-database\fP \fIdatabase\fP
+The PostgreSQL database to connect.
+.TP
+\fBpgsql-table\fP \fItable\fP
+The PostgreSQL table to look for username, password and client ip address which should be assigned.
+.TP
+\fBpgsql-column-user\fP \fIusername-field\fP
+The PostgreSQL column which stores the username.
+.TP
+\fBpgsql-column-pass\fP \fIpassword-field\fP
+The PostgreSQL column which stores the password.
+.TP
+\fBpgsql-column-ip\fP \fIip-address-field\fP
+The PostgreSQL column which stores the client ip address.
+.TP
+\fBpgsql-condition\fP \fIquery\fP
+This is an extra PostgreSQL condition, if you need to join additional tables for username verification.
+.TP
+\fBpgsql-ignore-multiple\fP
+If this option is set, the plugin will ignore multiple result sets with the same username. The plugin will take the first entry and verifiy it against password. If this option is not set, the plugin will deny authentication and terminate the link. (Default: not set)
+.TP
+\fBpgsql-ignore-null\fP
+If this option is set, the plugin will treat NULL as string and verify username or password against it. If this option is not set, the plugin will deny authentication and terminate the link. (Default: not set)
+.TP
+\fBpgsql-connect-timeout\fP \fItimeout\fP
+The PostgreSQL connection timeout. (Default: 5 seconds)
+.TP
+\fBpgsql-retry-connect\fP \fIretries\fP
+The PostgreSQL connection retry limit, if connection failed it will be retried as often as in \fIretries\fP specified. (Default: 5)
+.TP
+\fBpgsql-retry-query\fP \fIretries\fP
+The PostgreSQL query retry limit, if query failed (maybe the table or row is locked) it will be retried as often as in \fIretries\fP specified. (Default: 5)
+.SH SEE ALSO
+.BR pppd (8)
+.SH AUTHOR
+Check documentation.
+.TP
+pppd-sql is (c) 2008
+.B Maik Broemme <mbroemme@plusserver.de>
+.PP
+The above e-mail address can be used to send bug reports, feedbacks or plugin enhancements.
