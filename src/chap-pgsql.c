@@ -56,7 +56,7 @@ int32_t pppd__pgsql_error(uint8_t *error_message) {
 		} else {
 
 			/* show the detailed error. */
-			warn("Plugin %s:   %s\n", PLUGIN_NAME_PGSQL, error_token);
+			error("Plugin %s:   %s\n", PLUGIN_NAME_PGSQL, error_token);
 		}
 	}
 
