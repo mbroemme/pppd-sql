@@ -20,7 +20,10 @@
  */
 
 /* generic includes. */
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <string.h>
+#include <sys/socket.h>
 
 /* generic plugin includes. */
 #include "plugin-pgsql.h"
@@ -29,6 +32,38 @@
 /* chap plugin includes. */
 #include "chap-pgsql.h"
 
+/* this function handles the PQerrorMessage() result. */
+int32_t pppd__pgsql_error(uint8_t *error_message) {
+
+	/* some common variables. */
+	uint8_t *error_token;
+	uint32_t first = 0;
+
+	/* show error header. */
+	error("Plugin %s: Fatal Error Message (PostgreSQL):\n", PLUGIN_NAME_PGSQL);
+
+	/* loop though error message and separate it by tab delimiter. */
+	while ((error_token = pppd__strsep(&error_message, (unsigned char *)"\t")) != NULL) {
+
+		/* check if we show first line. */
+		if (first == 0) {
+
+			/* show the detailed error. */
+			error("Plugin %s: * %s\n", PLUGIN_NAME_PGSQL, error_token);
+
+			/* increase counter. */
+			first++;
+		} else {
+
+			/* show the detailed error. */
+			warn("Plugin %s:   %s\n", PLUGIN_NAME_PGSQL, error_token);
+		}
+	}
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
 
@@ -36,23 +71,32 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	uint8_t *token_pgsql_uri;
 	uint8_t *token_pgsql_host;
 	uint8_t *token_pgsql_port;
+	uint8_t query[1024];
+	uint8_t query_extended[1024];
 	uint8_t connection_info[1024];
+	uint8_t secret_name[MAXSECRETLEN];
+	int32_t secret_length	= 0;
+	int32_t ok		= 0;
+	int32_t is_null		= 0;
 	uint32_t count		= 0;
 	uint32_t found		= 0;
+	uint8_t *row		= 0;
+	uint8_t *field		= NULL;
+	PGresult *result	= NULL;
 	PGconn *pgsql		= NULL;
 
 	/* check if all information are supplied. */
 	if (pppd_pgsql_host		== NULL ||
-	    pppd_pgsql_database		== NULL ||
 	    pppd_pgsql_user		== NULL ||
 	    pppd_pgsql_pass		== NULL ||
+	    pppd_pgsql_database		== NULL ||
 	    pppd_pgsql_table		== NULL ||
 	    pppd_pgsql_column_user	== NULL ||
 	    pppd_pgsql_column_pass	== NULL ||
 	    pppd_pgsql_column_ip	== NULL) {
 
-		/* something failed on mysql initialization. */
-		error("Plugin %s: The PostgreSQL information are not complete\n", PLUGIN_NAME_PGSQL);
+		/* something failed on postgresql initialization. */
+		error("Plugin %s: PostgreSQL information are not complete\n", PLUGIN_NAME_PGSQL);
 
 		/* return with error and terminate link. */
 		return 0;
@@ -73,7 +117,7 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 		memset(connection_info, 0, sizeof(connection_info));
 
 		/* create the connection information for postgresql. */
-		snprintf((char *)connection_info, 1024, "host='%s' port='%s' user='%s' pass='%s' dbname='%s' connect_timeout='%i'", token_pgsql_host, token_pgsql_port, pppd_pgsql_user, pppd_pgsql_pass, pppd_pgsql_database, pppd_pgsql_connect_timeout);
+		snprintf((char *)connection_info, 1024, "host='%s' port='%s' user='%s' password='%s' dbname='%s' connect_timeout='%i'", token_pgsql_host, token_pgsql_port, pppd_pgsql_user, pppd_pgsql_pass, pppd_pgsql_database, pppd_pgsql_connect_timeout);
 
 		/* loop through number of connection retries. */
 		for (count = pppd_pgsql_retry_connect; count > 0 ; count--) {
@@ -88,14 +132,14 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 				if (count == 1) {
 
 					/* something on establishing connection failed. */
-					warn("Plugin %s: Warning PostgreSQL server %s not working\n", PLUGIN_NAME_PGSQL, token_pgsql_host);
+					pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
 				}
 			} else {
 
 				/* found working postgresql server. */
 				info("Plugin %s: Using PostgreSQL server %s\n", PLUGIN_NAME_PGSQL, token_pgsql_host);
 
-				/* indicate that we found working mysql server. */
+				/* indicate that we found working postgresql server. */
 				found = 1;
 
 				/* found working connection, so break loop. */
@@ -103,7 +147,7 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 			}
 		}
 
-		/* check if we found working mysql server. */
+		/* check if we found working postgresql server. */
 		if (found == 1) {
 
 			/* found working connection, so break loop. */
@@ -124,6 +168,170 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 		return 0;
 	}
 
+	/* build query for database. */
+	snprintf((char *)query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_pgsql_column_pass, pppd_pgsql_column_ip, pppd_pgsql_table, pppd_pgsql_column_user, name);
+
+	/* check if we have an additional postgresql condition. */
+	if (pppd_pgsql_condition != NULL) {
+
+		/* build extended query for database. */
+		snprintf((char *)query_extended, 1024, " AND %s", pppd_pgsql_condition);
+
+		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
+		strncat((char *)query, (char *)query_extended, 1023);
+	}
+
+	/* set successful execution value to zero. */
+	found = 0;
+
+	/* loop through number of connection retries. */
+	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
+
+		/* check if query was successfully executed. */
+		if ((result = PQexec(pgsql, (char *)query)) != NULL) {
+
+			/* indicate that we fetch a result. */
+			found = 1;
+
+			/* query result was ok, so break loop. */
+			break;
+		}
+
+		/* clear memory to avoid leaks. */
+		PQclear(result);
+	}
+
+	/* check if no query was executed successfully, very bad :) */
+	if (found == 0) {
+
+		/* something on executing query failed. */
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+
+		/* close the connection. */
+		PQfinish(pgsql);
+
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* check if postgresql should return data. */
+	if (PQnfields(result) == 0) {
+
+		/* something on executing query failed. */
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+
+		/* clear memory to avoid leaks. */
+		PQclear(result);
+
+		/* close the connection. */
+		PQfinish(pgsql);
+
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* check if we have multiple user accounts. */
+	if ((PQntuples(result) > 1) && (pppd_pgsql_ignore_multiple == 0)) {
+
+		/* multiple user accounts found. */
+		error("Plugin %s: Multiple accounts for %s found in database\n", PLUGIN_NAME_PGSQL, name);
+
+		/* clear memory to avoid leaks. */
+		PQclear(result);
+
+		/* close the connection. */
+		PQfinish(pgsql);
+
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* loop through all columns. */
+	for (count = 0; count < PQnfields(result); count++) {
+
+		/* fetch postgresql field name. */
+		field = (uint8_t *)PQfname(result, count);
+
+		/* fetch NULL information. */
+		is_null = PQgetisnull(result, 0, count);
+
+		/* first check what result we should get. */
+		if (is_null == 0) {
+
+			/* fetch column. */
+			row = (uint8_t *)PQgetvalue(result, 0, count);
+		} else {
+
+			/* set row to string NULL. */
+			row = (uint8_t *)"NULL";
+		}
+
+		/* check if column is NULL. */
+		if ((is_null == 1) && (pppd_pgsql_ignore_null == 0)) {
+
+			/* NULL user account found. */
+			error("Plugin %s: The column %s for %s is NULL in database\n", PLUGIN_NAME_PGSQL, field, name);
+
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* clear memory to avoid leaks. */
+			PQclear(result);
+
+			/* close the connection. */
+			PQfinish(pgsql);
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+
+		/* check if we found password. */
+		if (strcmp((char *)field, (char *)pppd_pgsql_column_pass) == 0) {
+
+			/* cleanup memory. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* copy password to secret. */
+			strncpy((char *)secret_name, (char *)row, MAXSECRETLEN);
+			secret_length = strlen((char *)secret_name);
+		}
+
+		/* check if we found client ip. */
+		if (strcmp((char *)field, (char *)pppd_pgsql_column_ip) == 0) {
+
+			/* check if ip address was successfully converted into binary data. */
+			if (inet_aton((char *)row, (struct in_addr *) &client_ip) == 0) {
+
+				/* error on converting ip address.*/
+				error("Plugin %s: IP address %s is not valid\n", PLUGIN_NAME_PGSQL, row);
+
+				/* clear the memory with the password, so nobody is able to dump it. */
+				memset(secret_name, 0, sizeof(secret_name));
+
+				/* clear memory to avoid leaks. */
+				PQclear(result);
+
+				/* close the connection. */
+				PQfinish(pgsql);
+
+				/* return with error and terminate link. */
+				return 0;
+			}
+		}
+	}
+
+	/* clear memory to avoid leaks. */
+	PQclear(result);
+
+	/* close the connection. */
+	PQfinish(pgsql);
+
+	/* check the discovered secret against the client's response. */
+	ok = digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space);
+
+	/* clear the memory with the password, so nobody is able to dump it. */
+	memset(secret_name, 0, sizeof(secret_name));
+
 	/* return status of password verification. */
-	return 0;
+	return ok;
 }

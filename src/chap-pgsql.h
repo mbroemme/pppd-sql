@@ -27,6 +27,11 @@
  */
 extern uint32_t client_ip;
 
+/* this function handles the PQerrorMessage() result. */
+int32_t pppd__pgsql_error(
+	uint8_t		*error_message
+);
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(
 	char		*name,
