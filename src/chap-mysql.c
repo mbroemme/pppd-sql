@@ -33,10 +33,10 @@
 int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const uint8_t *error_message) {
 
 	/* show error header. */
-	warn("Plugin %s: Fatal Error Message (MySQL):\n", PLUGIN_NAME_MYSQL);
+	error("Plugin %s: Fatal Error Message (MySQL):\n", PLUGIN_NAME_MYSQL);
 
 	/* show the detailed error. */
-	warn("Plugin %s: * %d (%s): %s\n", PLUGIN_NAME_MYSQL, error_code, error_state, error_message);
+	error("Plugin %s: * %d (%s): %s\n", PLUGIN_NAME_MYSQL, error_code, error_state, error_message);
 
 	/* if no error was found, return zero. */
 	return 0;
@@ -54,7 +54,6 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length	= 0;
 	int32_t ok		= 0;
-	uint32_t columns	= 0;
 	uint32_t count		= 0;
 	uint32_t found		= 0;
 	MYSQL_RES *result	= NULL;
@@ -228,14 +227,11 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		return 0;
 	}
 
-	/* fetch number of columns. */
-	columns = mysql_num_fields(result);
-
 	/* fetch mysql row, we only take care of first row. */
 	row = mysql_fetch_row(result);
 
 	/* loop through all columns. */
-	for (count = 0; count < columns; count++) {
+	for (count = 0; count < mysql_num_fields(result); count++) {
 
 		/* fetch mysql field name. */
 		field = mysql_fetch_field(result);
@@ -243,7 +239,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		/* check if column is NULL. */
 		if ((row[count] == NULL) && (pppd_mysql_ignore_null == 0)) {
 
-			/* multiple user accounts found. */
+			/* NULL user account found. */
 			error("Plugin %s: The column %s for %s is NULL in database\n", PLUGIN_NAME_MYSQL, field->name, name);
 
 			/* clear the memory with the password, so nobody is able to dump it. */
