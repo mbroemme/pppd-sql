@@ -25,6 +25,13 @@
 /* generic includes. */
 #include <stdint.h>
 
+/* define errors. */
+#define SQL_ERROR_INCOMPLETE		-1	/* the supplied sql information from configuration file are not complete. */
+#define SQL_ERROR_INIT			-2	/* the initialization of the sql structure failed. */
+#define SQL_ERROR_OPTION		-3	/* some unknown sql options were given. */
+#define SQL_ERROR_CONNECT		-4	/* none of the supplied sql servers are working. */
+#define SQL_ERROR_QUERY			-5	/* the given sql query failed. */
+
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
  */
