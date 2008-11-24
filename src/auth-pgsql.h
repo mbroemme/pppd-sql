@@ -33,6 +33,13 @@ int32_t pppd__pgsql_error(
 	uint8_t		*error_message
 );
 
+/* this function return the password from database. */
+int32_t pppd__pgsql_password(
+	uint8_t		*name,
+	uint8_t		*secret_name,
+	int32_t		*secret_length
+);
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(
 	char		*name,
