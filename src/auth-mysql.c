@@ -24,6 +24,7 @@
 #include <string.h>
 
 /* generic plugin includes. */
+#include "plugin.h"
 #include "plugin-mysql.h"
 #include "str.h"
 
@@ -43,8 +44,8 @@ int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const
 	return 0;
 }
 
-/* this function check the chap authentication information against a mysql database. */
-int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
+/* this function return the password from database. */
+int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
 
 	/* some common variables. */
 	uint8_t *token_mysql_uri;
@@ -52,14 +53,11 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	uint8_t *token_mysql_port;
 	uint8_t query[1024];
 	uint8_t query_extended[1024];
-	uint8_t secret_name[MAXSECRETLEN];
-	int32_t secret_length	= 0;
-	int32_t ok		= 0;
-	uint32_t count		= 0;
-	uint32_t found		= 0;
-	MYSQL_RES *result	= NULL;
-	MYSQL_ROW row		= NULL;
-	MYSQL_FIELD *field	= NULL;
+	uint32_t count     = 0;
+	uint32_t found     = 0;
+	MYSQL_RES *result  = NULL;
+	MYSQL_ROW row      = NULL;
+	MYSQL_FIELD *field = NULL;
 	MYSQL mysql;
 
 	/* check if all information are supplied. */
@@ -76,7 +74,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		error("Plugin %s: MySQL information are not complete\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
-		return 0;
+		return SQL_ERROR_INCOMPLETE;
 	}
 
 	/* check if mysql initialization was successful. */
@@ -86,7 +84,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		error("Plugin %s: MySQL initialization failed\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
-		return 0;
+		return SQL_ERROR_INIT;
 	}
 
 	/* set mysql connect timeout. */
@@ -95,7 +93,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		info("Plugin %s: MySQL options are unknown\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
-		return 0;
+		return SQL_ERROR_OPTION;
 	}
 
 	/* loop through all server tokens. */
@@ -152,7 +150,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		mysql_close(&mysql);
 
 		/* return with error and terminate link. */
-		return 0;
+		return SQL_ERROR_CONNECT;
 	}
 
 	/* build query for database. */
@@ -195,7 +193,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		mysql_close(&mysql);
 
 		/* return with error and terminate link. */
-		return 0;
+		return SQL_ERROR_QUERY;
 	}
 
 	/* check if mysql result was successfully stored. */
@@ -211,7 +209,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 			mysql_close(&mysql);
 
 			/* return with error and terminate link. */
-			return 0;
+			return SQL_ERROR_QUERY;
 		}
 	}
 
@@ -225,7 +223,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		mysql_close(&mysql);
 
 		/* return with error and terminate link. */
-		return 0;
+		return SQL_ERROR_QUERY;
 	}
 
 	/* fetch mysql row, we only take care of first row. */
@@ -250,7 +248,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 			mysql_close(&mysql);
 
 			/* return with error and terminate link. */
-			return 0;
+			return SQL_ERROR_QUERY;
 		}
 
 		/* if we reach this point, check only if column is NULL and transform it. */
@@ -264,7 +262,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 
 			/* copy password to secret. */
 			strncpy(secret_name, row[count], MAXSECRETLEN);
-			secret_length = strlen(secret_name);
+			*secret_length = strlen(secret_name);
 		}
 
 		/* check if we found client ip. */
@@ -283,13 +281,32 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 				mysql_close(&mysql);
 
 				/* return with error and terminate link. */
-				return 0;
+				return SQL_ERROR_QUERY;
 			}
 		}
 	}
 
 	/* close the connection. */
 	mysql_close(&mysql);
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
+/* this function check the chap authentication information against a mysql database. */
+int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
+
+	/* some common variables. */
+	uint8_t secret_name[MAXSECRETLEN];
+	int32_t secret_length = 0;
+	int32_t ok            = 0;
+
+	/* check if mysql fetching was successful. */
+	if (pppd__mysql_password(name, secret_name, &secret_length) < 0) {
+
+		/* return with error and terminate link. */
+		return 0;
+	}
 
 	/* check the discovered secret against the client's response. */
 	ok = digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space);
@@ -304,9 +321,27 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 /* this function check the pap authentication information against a mysql database. */
 int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordlist **paddrs, struct wordlist **popts) {
 
-	/* TODO: implement this. */
-	error("Plugin %s: TODO: PAP Authentication will be implemented in 0.2.0\n", PLUGIN_NAME_MYSQL);
+	/* some common variables. */
+	uint8_t secret_name[MAXSECRETLEN];
+	int32_t secret_length = 0;
 
-	/* until it is implemented we deny every authentication request and terminate the link. */
-	return 0;
+	/* check if mysql fetching was successful. */
+	if (pppd__mysql_password(user, secret_name, &secret_length) < 0) {
+
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* check if we found valid password. */
+	if (strcmp(passwd, secret_name) != 0) {
+
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
+
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* if no error was found, establish link. */
+	return 1;
 }
