@@ -65,7 +65,7 @@ if test "$withval" = "no" -o "$withval" = "yes"; then
 		libdir="$libdir/pppd/$PPPD_VERSION"
 	fi
 fi
-if test "$withval" != "no" -a "$withval" != "yes"; then
+if test "$withval" != "no" -a "$withval" != "yes" -a -n "$withval"; then
 	case "$with_plugin_path" in
 		/*)
 			libdir="$with_plugin_path"
