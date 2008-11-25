@@ -76,9 +76,26 @@ if test "$withval" != "no" -a "$withval" != "yes" -a -n "$withval"; then
 	esac
 fi
 
-# checking for mysql library.
-AC_CHECK_HEADER([mysql/mysql.h])
-AC_PATH_PROG([mysql_config], [mysql_config])
+# adding new command line switch for enabling mysql.
+AC_ARG_ENABLE([mysql], [AS_HELP_STRING([--enable-mysql], [enable mysql plugin [default=autodetect]])], [enable_mysql=$enableval])
+
+# checking if mysql was enabled and must be available.
+if test "$enable_mysql" = "yes"; then
+
+	# checking for mysql library.
+	AC_CHECK_HEADER([mysql/mysql.h], [], [AC_MSG_ERROR([*** mysql.h is required, install mysql header files])])
+	AC_PATH_PROG([mysql_config], [mysql_config], [AC_MSG_ERROR([*** mysql_config is required, install mysql development files])])
+fi
+
+# checking if mysql should be autodetected.
+if test -z "$enable_mysql"; then
+
+	# checking for mysql library.
+	AC_CHECK_HEADER([mysql/mysql.h])
+	AC_PATH_PROG([mysql_config], [mysql_config])
+fi
+
+# checking for mysql environment.
 if test "$ac_cv_header_mysql_mysql_h" = "yes" -a -n "$mysql_config"; then
 	MYSQL_CFLAGS="$(mysql_config --cflags)"
 	MYSQL_LDFLAGS="$(mysql_config --libs)"
@@ -93,9 +110,26 @@ fi
 # define automake rule for compiling.
 AM_CONDITIONAL([HAVE_MYSQL], [test "$ac_cv_header_mysql_mysql_h" = "yes"])
 
-# checking for postgresql library.
-AC_CHECK_HEADER([libpq-fe.h])
-AC_PATH_PROG([pg_config], [pg_config])
+# adding new command line switch for enabling postgresql.
+AC_ARG_ENABLE([postgresql], [AS_HELP_STRING([--enable-postgresql], [enable postgresql plugin [default=autodetect]])], [enable_postgresql=$enableval])
+
+# checking if mysql was enabled and must be available.
+if test "$enable_postgresql" = "yes"; then
+
+	# checking for postgresql library.
+	AC_CHECK_HEADER([libpq-fe.h], [], [AC_MSG_ERROR([*** libpq-fe.h is required, install postgresql header files])])
+	AC_PATH_PROG([pg_config], [pg_config], [AC_MSG_ERROR([*** pg_config is required, install postgresql development files])])
+fi
+
+# checking if mysql should be autodetected.
+if test -z "$enable_postgresql"; then
+
+	# checking for postgresql library.
+	AC_CHECK_HEADER([libpq-fe.h])
+	AC_PATH_PROG([pg_config], [pg_config])
+fi
+
+# checking for postgresql environment.
 if test "$ac_cv_header_libpq_fe_h" = "yes" -a -n "$pg_config"; then
 	PGSQL_CFLAGS="$(pg_config --cflags)"
 	PGSQL_LDFLAGS="-L$(pg_config --libdir) -lpq"
