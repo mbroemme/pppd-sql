@@ -76,9 +76,10 @@ if test "$withval" != "no" -a "$withval" != "yes" -a -n "$withval"; then
 	esac
 fi
 
-# checking for mysql include.
-AC_CHECK_HEADER([mysql/mysql.h], [], [AC_MSG_ERROR([*** mysql.h is required, install mysql header files])])
-if test "$ac_cv_header_mysql_mysql_h" = "yes"; then
+# checking for mysql library.
+AC_CHECK_HEADER([mysql/mysql.h])
+AC_PATH_PROG([mysql_config], [mysql_config])
+if test "$ac_cv_header_mysql_mysql_h" = "yes" -a -n "$mysql_config"; then
 	MYSQL_CFLAGS="$(mysql_config --cflags)"
 	MYSQL_LDFLAGS="$(mysql_config --libs)"
 	AC_SUBST(MYSQL_CFLAGS)
@@ -87,13 +88,15 @@ if test "$ac_cv_header_mysql_mysql_h" = "yes"; then
 	# define the mysql name and version.
 	AC_DEFINE_UNQUOTED(PLUGIN_NAME_MYSQL, "mysql", [Plugin name as Prefix.])
 	AC_DEFINE_UNQUOTED(PLUGIN_VERSION_MYSQL, "$(mysql_config --version)", [Plugin version for MySQL.])
-else
-	AC_MSG_ERROR([*** mysql is required, install mysql library files])
 fi
 
-# checking for postgresql include.
-AC_CHECK_HEADER([libpq-fe.h], [], [AC_MSG_ERROR([*** libpq-fe.h is required, install postgresql header files])])
-if test "$ac_cv_header_libpq_fe_h" = "yes"; then
+# define automake rule for compiling.
+AM_CONDITIONAL([HAVE_MYSQL], [test "$ac_cv_header_mysql_mysql_h" = "yes"])
+
+# checking for postgresql library.
+AC_CHECK_HEADER([libpq-fe.h])
+AC_PATH_PROG([pg_config], [pg_config])
+if test "$ac_cv_header_libpq_fe_h" = "yes" -a -n "$pg_config"; then
 	PGSQL_CFLAGS="$(pg_config --cflags)"
 	PGSQL_LDFLAGS="-L$(pg_config --libdir) -lpq"
 	AC_SUBST(PGSQL_CFLAGS)
@@ -102,8 +105,16 @@ if test "$ac_cv_header_libpq_fe_h" = "yes"; then
 	# define the postgresql name and version.
 	AC_DEFINE_UNQUOTED(PLUGIN_NAME_PGSQL, "pgsql", [Plugin name as Prefix.])
 	AC_DEFINE_UNQUOTED(PLUGIN_VERSION_PGSQL, "$(pg_config --version | $sedpath 's/.* //')", [Plugin version for PostgreSQL.])
-else
-	AC_MSG_ERROR([*** postgresql is required, install postgresql library files])
+
+fi
+
+# define automake rule for compiling.
+AM_CONDITIONAL([HAVE_PGSQL], [test "$ac_cv_header_libpq_fe_h" = "yes"])
+
+# check if no database backends are available, that doesn't make sense for a sql plugin. :)
+if test -z "$ac_cv_header_mysql_mysql_h" -a \
+        -z "$ac_cv_header_libpq_fe_h"; then
+	AC_MSG_ERROR([*** no database backend found, install development and library files of at least one])
 fi
 
 # creating files.
@@ -112,3 +123,16 @@ Makefile
 doc/Makefile
 src/Makefile
 ])
+
+# show user the configuration summary.
+echo ""
+echo "'$PACKAGE' is configured with the following database backends. Please"
+echo "verify that this configuration matches your expectations."
+echo ""
+if test "$ac_cv_header_mysql_mysql_h" = "yes" -a -n "$mysql_config"; then
+echo "  * mysql"
+fi
+if test "$ac_cv_header_libpq_fe_h" = "yes" -a -n "$pg_config"; then
+echo "  * postgresql"
+fi
+echo ""
