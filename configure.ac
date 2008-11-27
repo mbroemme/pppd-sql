@@ -1,5 +1,5 @@
 # the autoconf initilization.
-AC_INIT(pppd-sql, 0.2.0, [mbroemme@plusserver.de], [pppd-sql])
+AC_INIT(pppd-sql, 0.3.0, [mbroemme@plusserver.de], [pppd-sql])
 
 # detect the canonical host and target build environment.
 AC_CANONICAL_SYSTEM

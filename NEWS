@@ -1,4 +1,17 @@
+Changes version 0.3.0 (2008-11-28)
+==================================
+
+    * Added support for Password Authentication Protocol (PAP) via
+      MySQL and PostgreSQL.
+
+    * Added switch to specify which database backends should be build.
+      Some examples:
+
+        --enable-mysql
+        --enable-postgresql
+
 Changes version 0.2.0 (2008-11-23)
+==================================
 
     * Added override path for PPP plugin directory to autoconf build
       environment. (New configure switch: '--with-plugin-path=<path>'
