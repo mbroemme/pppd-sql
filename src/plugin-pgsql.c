@@ -55,6 +55,7 @@ option_t options[] = {
 	{ "pgsql-host", o_string, &pppd_pgsql_host, "Set PostgreSQL server host"},
 	{ "pgsql-user", o_string, &pppd_pgsql_user, "Set PostgreSQL username"},
 	{ "pgsql-pass", o_string, &pppd_pgsql_pass, "Set PostgreSQL password"},
+	{ "pgsql-pass-encryption", o_string, &pppd_pgsql_pass_encryption, "Set PostgreSQL password encryption algorithm"},
 	{ "pgsql-database", o_string, &pppd_pgsql_database, "Set PostgreSQL database name"},
 	{ "pgsql-table", o_string, &pppd_pgsql_table, "Set PostgreSQL authentication table"},
 	{ "pgsql-column-user", o_string, &pppd_pgsql_column_user, "Set PostgreSQL username field"},

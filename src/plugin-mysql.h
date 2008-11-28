@@ -35,6 +35,7 @@
 
 /* ppp includes. */
 #include <pppd/chap-new.h>
+#include <pppd/md5.h>
 #include <pppd/pppd.h>
 
 /* mysql includes. */
@@ -47,6 +48,7 @@ extern uint8_t pppd_version[];
 extern uint8_t *pppd_mysql_host;
 extern uint8_t *pppd_mysql_user;
 extern uint8_t *pppd_mysql_pass;
+extern uint8_t *pppd_mysql_pass_encryption;
 extern uint8_t *pppd_mysql_database;
 extern uint8_t *pppd_mysql_table;
 extern uint8_t *pppd_mysql_column_user;

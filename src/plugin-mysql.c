@@ -55,6 +55,7 @@ option_t options[] = {
 	{ "mysql-host", o_string, &pppd_mysql_host, "Set MySQL server host"},
 	{ "mysql-user", o_string, &pppd_mysql_user, "Set MySQL username"},
 	{ "mysql-pass", o_string, &pppd_mysql_pass, "Set MySQL password"},
+	{ "mysql-pass-encryption", o_string, &pppd_mysql_pass_encryption, "Set MySQL password encryption algorithm"},
 	{ "mysql-database", o_string, &pppd_mysql_database, "Set MySQL database name"},
 	{ "mysql-table", o_string, &pppd_mysql_table, "Set MySQL authentication table"},
 	{ "mysql-column-user", o_string, &pppd_mysql_column_user, "Set MySQL username field"},
