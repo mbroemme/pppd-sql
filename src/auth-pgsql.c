@@ -88,6 +88,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 	if (pppd_pgsql_host		== NULL ||
 	    pppd_pgsql_user		== NULL ||
 	    pppd_pgsql_pass		== NULL ||
+	    pppd_pgsql_pass_encryption	== NULL ||
 	    pppd_pgsql_database		== NULL ||
 	    pppd_pgsql_table		== NULL ||
 	    pppd_pgsql_column_user	== NULL ||
@@ -358,8 +359,11 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordlist **paddrs, struct wordlist **popts) {
 
 	/* some common variables. */
+	uint8_t hash[16];
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
+	uint32_t count        = 0;
+	MD5_CTX ctx;
 
 	/* check if pgsql fetching was successful. */
 	if (pppd__pgsql_password((uint8_t *)user, secret_name, &secret_length) < 0) {
@@ -368,14 +372,52 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 		return 0;
 	}
 
-	/* check if we found valid password. */
-	if (strcmp((char *)passwd, (char *)secret_name) != 0) {
+	/* check if we use no algorithm. */
+	if (strcasecmp((char *)pppd_pgsql_pass_encryption, "NONE") == 0) {
 
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
+		/* check if we found valid password. */
+		if (strcmp((char *)passwd, (char *)secret_name) != 0) {
 
-		/* return with error and terminate link. */
-		return 0;
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+	}
+
+	/* check if we use md5 hashing algorithm. */
+	if (strcasecmp((char *)pppd_pgsql_pass_encryption, "MD5") == 0) {
+
+		/* check if secret from database is shorter than an expected md5 hash. */
+		if (strlen((char *)secret_name) < 32) {
+
+			/* clear the memory with the hash, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+
+		/* compute md5 hash. */
+		MD5_Init(&ctx);
+		MD5_Update(&ctx, passwd, strlen(passwd));
+		MD5_Final(hash, &ctx);
+
+		/* loop through every byte and compare it. */
+		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
+
+			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
+			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != hash[count]) {
+
+				/* clear the memory with the hash, so nobody is able to dump it. */
+				memset(secret_name, 0, sizeof(secret_name));
+				memset(hash, 0, sizeof(hash));
+
+				/* return with error and terminate link. */
+				return 0;
+			}
+		}
 	}
 
 	/* if no error was found, establish link. */

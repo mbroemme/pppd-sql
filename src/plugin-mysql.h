@@ -49,6 +49,7 @@ extern uint8_t *pppd_mysql_host;
 extern uint8_t *pppd_mysql_user;
 extern uint8_t *pppd_mysql_pass;
 extern uint8_t *pppd_mysql_pass_encryption;
+extern uint8_t *pppd_mysql_pass_key;
 extern uint8_t *pppd_mysql_database;
 extern uint8_t *pppd_mysql_table;
 extern uint8_t *pppd_mysql_column_user;

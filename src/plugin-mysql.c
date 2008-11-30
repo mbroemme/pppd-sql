@@ -33,6 +33,8 @@ uint8_t pppd_version[]			= VERSION;
 uint8_t *pppd_mysql_host		= NULL;
 uint8_t *pppd_mysql_user		= NULL;
 uint8_t *pppd_mysql_pass		= NULL;
+uint8_t *pppd_mysql_pass_encryption	= NULL;
+uint8_t *pppd_mysql_pass_key		= NULL;
 uint8_t *pppd_mysql_database		= NULL;
 uint8_t *pppd_mysql_table		= NULL;
 uint8_t *pppd_mysql_column_user		= NULL;
@@ -56,6 +58,7 @@ option_t options[] = {
 	{ "mysql-user", o_string, &pppd_mysql_user, "Set MySQL username"},
 	{ "mysql-pass", o_string, &pppd_mysql_pass, "Set MySQL password"},
 	{ "mysql-pass-encryption", o_string, &pppd_mysql_pass_encryption, "Set MySQL password encryption algorithm"},
+	{ "mysql-pass-key", o_string, &pppd_mysql_pass_key, "Set MySQL password encryption key or salt"},
 	{ "mysql-database", o_string, &pppd_mysql_database, "Set MySQL database name"},
 	{ "mysql-table", o_string, &pppd_mysql_table, "Set MySQL authentication table"},
 	{ "mysql-column-user", o_string, &pppd_mysql_column_user, "Set MySQL username field"},

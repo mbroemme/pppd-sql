@@ -49,6 +49,7 @@ extern uint8_t *pppd_pgsql_host;
 extern uint8_t *pppd_pgsql_user;
 extern uint8_t *pppd_pgsql_pass;
 extern uint8_t *pppd_pgsql_pass_encryption;
+extern uint8_t *pppd_pgsql_pass_key;
 extern uint8_t *pppd_pgsql_database;
 extern uint8_t *pppd_pgsql_table;
 extern uint8_t *pppd_pgsql_column_user;
