@@ -102,3 +102,25 @@ uint8_t *pppd__strstrip(uint8_t *string_p) {
 	/* return new string. */
 	return string_p;
 }
+
+/* this function convert a given hex value to an integer. */
+int32_t htoi(uint8_t character) {
+
+	/* check if source character is a numerical value. */
+	if (character >= '0' && character <= '9') {
+		return character - '0';
+	}
+
+	/* check if source character is a uppercase value. */
+	if (character >= 'A' && character <= 'F') {
+		return character - 'A' + 10;
+	}
+
+	/* check if source character is a lowercase value. */
+	if (character >= 'a' && character <= 'f') {
+		return character - 'a' + 10;
+	}
+
+	/* error on conversion. */
+	return -1;
+}
