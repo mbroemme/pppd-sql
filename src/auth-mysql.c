@@ -78,6 +78,21 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		return SQL_ERROR_INCOMPLETE;
 	}
 
+	/* check if passwords are encrypted. */
+	if (strcasecmp(pppd_mysql_pass_encryption, "CRYPT")	== 0 ||
+	    strcasecmp(pppd_mysql_pass_encryption, "AES")	== 0) {
+
+		/* check if key or salt is given. */
+		if (pppd_mysql_pass_key == NULL) {
+
+			/* some required encryption information are missing. */
+			error("Plugin: %s: MySQL encryption information are not complete\n", PLUGIN_NAME_MYSQL);
+
+			/* return with error and terminate link. */
+			return SQL_ERROR_INCOMPLETE;
+		}
+	}
+
 	/* check if mysql initialization was successful. */
 	if (mysql_init(&mysql) == NULL) {
 
@@ -323,10 +338,10 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordlist **paddrs, struct wordlist **popts) {
 
 	/* some common variables. */
-	uint8_t hash[16];
 	uint8_t secret_name[MAXSECRETLEN];
-	int32_t secret_length = 0;
-	uint32_t count        = 0;
+	uint8_t *passwd_encrypted = NULL;
+	int32_t secret_length     = 0;
+	uint32_t count            = 0;
 	MD5_CTX ctx;
 
 	/* check if mysql fetching was successful. */
@@ -350,13 +365,57 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 		}
 	}
 
+	/* check if we use des crypt algorithm. */
+	if (strcasecmp(pppd_mysql_pass_encryption, "CRYPT") == 0) {
+
+		/* check if secret from database is shorter than an expected crypt() result. */
+		if (strlen(secret_name) < SIZE_CRYPT) {
+
+			/* clear the memory with the hash, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+
+		/* check if password was successfully encrypted. */
+		if ((passwd_encrypted = crypt(passwd, pppd_mysql_pass_key)) == NULL) {
+
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+
+		/* check if we found valid password. */
+		if (memcmp(secret_name, passwd_encrypted, SIZE_CRYPT) != 0) {
+
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+	}
+
 	/* check if we use md5 hashing algorithm. */
 	if (strcasecmp(pppd_mysql_pass_encryption, "MD5") == 0) {
 
 		/* check if secret from database is shorter than an expected md5 hash. */
-		if (strlen(secret_name) < 32) {
+		if (strlen(secret_name) < (SIZE_MD5 * 2)) {
 
 			/* clear the memory with the hash, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
+
+			/* return with error and terminate link. */
+			return 0;
+		}
+
+		/* allocate memory for the encrypted password. (well using dynamic memory allocation in the plugin is not the optimal result, i'll fix it later) */
+		if ((passwd_encrypted = calloc(SIZE_MD5, sizeof(passwd_encrypted))) == NULL) {
+
+			/* clear the memory with the password, so nobody is able to dump it. */
 			memset(secret_name, 0, sizeof(secret_name));
 
 			/* return with error and terminate link. */
@@ -366,22 +425,28 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 		/* compute md5 hash. */
 		MD5_Init(&ctx);
 		MD5_Update(&ctx, passwd, strlen(passwd));
-		MD5_Final(hash, &ctx);
+		MD5_Final(passwd_encrypted, &ctx);
 
 		/* loop through every byte and compare it. */
 		for (count = 0; count < (strlen(secret_name) / 2); count++) {
 
 			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
-			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != hash[count]) {
+			if (htoi(secret_name[2 * count]) * SIZE_MD5 + htoi(secret_name[2 * count + 1]) != passwd_encrypted[count]) {
 
 				/* clear the memory with the hash, so nobody is able to dump it. */
 				memset(secret_name, 0, sizeof(secret_name));
-				memset(hash, 0, sizeof(hash));
+				memset(passwd_encrypted, 0, sizeof(passwd_encrypted));
+
+				/* free the allocated memory. */
+				free(passwd_encrypted);
 
 				/* return with error and terminate link. */
 				return 0;
 			}
 		}
+
+		/* free the allocated memory. */
+		free(passwd_encrypted);
 	}
 
 	/* if no error was found, establish link. */
