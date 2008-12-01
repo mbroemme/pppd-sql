@@ -20,12 +20,9 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* generic includes. */
-#include <string.h>
-
 /* generic plugin includes. */
-#include "plugin.h"
 #include "plugin-mysql.h"
+#include "plugin.h"
 #include "str.h"
 
 /* auth plugin includes. */

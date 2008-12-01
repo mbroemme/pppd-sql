@@ -28,6 +28,7 @@ if test "$enable_static" = "yes"; then
 fi
 
 # checking for programs.
+AC_GNU_SOURCE
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET

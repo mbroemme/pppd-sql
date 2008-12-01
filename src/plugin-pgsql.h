@@ -31,7 +31,13 @@
 #endif
 
 /* generic includes. */
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 /* ppp includes. */
 #include <pppd/chap-new.h>

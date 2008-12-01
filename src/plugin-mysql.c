@@ -20,8 +20,8 @@
  */
 
 /* generic plugin includes. */
-#include "plugin.h"
 #include "plugin-mysql.h"
+#include "plugin.h"
 
 /* plugin auth includes. */
 #include "auth-mysql.h"

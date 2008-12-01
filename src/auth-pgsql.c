@@ -20,15 +20,9 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* generic includes. */
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <sys/socket.h>
-
 /* generic plugin includes. */
-#include "plugin.h"
 #include "plugin-pgsql.h"
+#include "plugin.h"
 #include "str.h"
 
 /* auth plugin includes. */
@@ -415,7 +409,7 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 		}
 
 		/* check if password was successfully encrypted. */
-		if ((passwd_encrypted = crypt(passwd, pppd_pgsql_pass_key)) == NULL) {
+		if ((passwd_encrypted = (uint8_t *)crypt(passwd, (char *)pppd_pgsql_pass_key)) == NULL) {
 
 			/* clear the memory with the password, so nobody is able to dump it. */
 			memset(secret_name, 0, sizeof(secret_name));

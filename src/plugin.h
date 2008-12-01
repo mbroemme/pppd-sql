@@ -24,8 +24,6 @@
 
 /* generic includes. */
 #include <stdint.h>
-#include <stdlib.h>
-#include <unistd.h>
 
 /* define errors. */
 #define SQL_ERROR_INCOMPLETE		-1	/* the supplied sql information from configuration file are not complete. */
