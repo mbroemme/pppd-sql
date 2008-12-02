@@ -21,8 +21,8 @@
  */
 
 /* generic plugin includes. */
-#include "plugin-pgsql.h"
 #include "plugin.h"
+#include "plugin-pgsql.h"
 #include "str.h"
 
 /* auth plugin includes. */
@@ -93,7 +93,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		error("Plugin %s: PostgreSQL information are not complete\n", PLUGIN_NAME_PGSQL);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_INCOMPLETE;
+		return PPPD_SQL_ERROR_INCOMPLETE;
 	}
 
 	/* check if passwords are encrypted. */
@@ -107,7 +107,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			error("Plugin: %s: PostgreSQL encryption information are not complete\n", PLUGIN_NAME_PGSQL);
 
 			/* return with error and terminate link. */
-			return SQL_ERROR_INCOMPLETE;
+			return PPPD_SQL_ERROR_INCOMPLETE;
 		}
 	}
 
@@ -174,7 +174,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		PQfinish(pgsql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_CONNECT;
+		return PPPD_SQL_ERROR_CONNECT;
 	}
 
 	/* build query for database. */
@@ -220,7 +220,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		PQfinish(pgsql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_QUERY;
+		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* check if postgresql should return data. */
@@ -236,7 +236,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		PQfinish(pgsql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_QUERY;
+		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* check if we have multiple user accounts. */
@@ -252,7 +252,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		PQfinish(pgsql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_QUERY;
+		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* loop through all columns. */
@@ -291,7 +291,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			PQfinish(pgsql);
 
 			/* return with error and terminate link. */
-			return SQL_ERROR_QUERY;
+			return PPPD_SQL_ERROR_QUERY;
 		}
 
 		/* check if we found password. */
@@ -324,7 +324,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 				PQfinish(pgsql);
 
 				/* return with error and terminate link. */
-				return SQL_ERROR_QUERY;
+				return PPPD_SQL_ERROR_QUERY;
 			}
 		}
 	}
@@ -369,114 +369,26 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
-	uint8_t *passwd_encrypted = NULL;
 	int32_t secret_length     = 0;
-	uint32_t count            = 0;
-	MD5_CTX ctx;
 
 	/* check if pgsql fetching was successful. */
 	if (pppd__pgsql_password((uint8_t *)user, secret_name, &secret_length) < 0) {
+
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
 
 		/* return with error and terminate link. */
 		return 0;
 	}
 
-	/* check if we use no algorithm. */
-	if (strcasecmp((char *)pppd_pgsql_pass_encryption, "NONE") == 0) {
+	/* check if the password is correct. */
+	if (pppd__verify_password((uint8_t *)passwd, secret_name, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) < 0) {
 
-		/* check if we found valid password. */
-		if (strcmp((char *)passwd, (char *)secret_name) != 0) {
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
 
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-	}
-
-	/* check if we use des crypt algorithm. */
-	if (strcasecmp((char *)pppd_pgsql_pass_encryption, "CRYPT") == 0) {
-
-		/* check if secret from database is shorter than an expected crypt() result. */
-		if (strlen((char *)secret_name) < SIZE_CRYPT) {
-
-			/* clear the memory with the hash, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* check if password was successfully encrypted. */
-		if ((passwd_encrypted = (uint8_t *)crypt(passwd, (char *)pppd_pgsql_pass_key)) == NULL) {
-
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* check if we found valid password. */
-		if (memcmp(secret_name, passwd_encrypted, SIZE_CRYPT) != 0) {
-
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-	}
-
-	/* check if we use md5 hashing algorithm. */
-	if (strcasecmp((char *)pppd_pgsql_pass_encryption, "MD5") == 0) {
-
-		/* check if secret from database is shorter than an expected md5 hash. */
-		if (strlen((char *)secret_name) < (SIZE_MD5 * 2)) {
-
-			/* clear the memory with the hash, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* allocate memory for the encrypted password. (well using dynamic memory allocation in the plugin is not the optimal result, i'll fix it later) */
-		if ((passwd_encrypted = calloc(SIZE_MD5, sizeof(passwd_encrypted))) == NULL) {
-
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* compute md5 hash. */
-		MD5_Init(&ctx);
-		MD5_Update(&ctx, passwd, strlen(passwd));
-		MD5_Final(passwd_encrypted, &ctx);
-
-		/* loop through every byte and compare it. */
-		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
-
-			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
-			if (htoi(secret_name[2 * count]) * SIZE_MD5 + htoi(secret_name[2 * count + 1]) != passwd_encrypted[count]) {
-
-				/* clear the memory with the hash, so nobody is able to dump it. */
-				memset(secret_name, 0, sizeof(secret_name));
-				memset(passwd_encrypted, 0, sizeof(passwd_encrypted));
-
-				/* free the allocated memory. */
-				free(passwd_encrypted);
-
-				/* return with error and terminate link. */
-				return 0;
-			}
-		}
-
-		/* free the allocated memory. */
-		free(passwd_encrypted);
+		/* return with error and terminate link. */
+		return 0;
 	}
 
 	/* if no error was found, establish link. */

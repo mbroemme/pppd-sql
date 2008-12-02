@@ -19,11 +19,12 @@
  *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  */
 
-/* generic includes. */
-#include <string.h>
-
 /* plugin includes. */
 #include "plugin.h"
+#include "str.h"
+
+/* generic includes. */
+#include <string.h>
 
 /* this function set whether the peer must authenticate itself to us via CHAP. */
 int32_t pppd__chap_check(void) {
@@ -58,4 +59,171 @@ int32_t pppd__allowed_address(uint32_t addr) {
 
 	/* return one, because we are allowed to assign ip addresses. */
 	return 1;
+}
+
+/* this function verify the given password. */
+int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *encrpytion, uint8_t *key) {
+
+	/* some common variables. */
+	uint8_t passwd_aes[SIZE_AES * ((SIZE_AES / strlen((char *)passwd)) - 1)];
+	uint8_t passwd_key[SIZE_AES];
+	uint8_t passwd_md5[SIZE_MD5];
+	uint8_t *passwd_crypt = NULL;
+	uint32_t count        = 0;
+	int32_t passwd_size   = 0;
+	int32_t temp_size     = 0;
+	MD5_CTX ctx;
+	EVP_CIPHER_CTX x;
+
+	/* cleanup the static array. */
+	memset(passwd_aes, 0, sizeof(passwd_aes));
+	memset(passwd_key, 0, sizeof(passwd_key));
+	memset(passwd_md5, 0, sizeof(passwd_md5));
+
+	/* check if we use no algorithm. */
+	if (strcasecmp((char *)encrpytion, "NONE") == 0) {
+
+		/* check if we found valid password. */
+		if (strcmp((char *)passwd, (char *)secret_name) != 0) {
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+	}
+
+	/* check if we use des crypt algorithm. */
+	if (strcasecmp((char *)encrpytion, "CRYPT") == 0) {
+
+		/* check if secret from database is shorter than an expected crypt() result. */
+		if (strlen((char *)secret_name) < SIZE_CRYPT) {
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* check if password was successfully encrypted. */
+		if ((passwd_crypt = (uint8_t *)crypt((char *)passwd, (char *)key)) == NULL) {
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* check if we found valid password. */
+		if (memcmp(secret_name, passwd_crypt, SIZE_CRYPT) != 0) {
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+	}
+
+	/* check if we use md5 hashing algorithm. */
+	if (strcasecmp((char *)encrpytion, "MD5") == 0) {
+
+		/* check if secret from database is shorter than an expected md5 hash. */
+		if (strlen((char *)secret_name) < (SIZE_MD5 * 2)) {
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* compute md5 hash. */
+		MD5_Init(&ctx);
+		MD5_Update(&ctx, passwd, strlen((char *)passwd));
+		MD5_Final(passwd_md5, &ctx);
+
+		/* loop through every byte and compare it. */
+		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
+
+			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
+			if (htoi(secret_name[2 * count]) * SIZE_MD5 + htoi(secret_name[2 * count + 1]) != passwd_md5[count]) {
+
+				/* clear the memory with the hash, so nobody is able to dump it. */
+				memset(passwd_md5, 0, sizeof(passwd_md5));
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_PASSWORD;
+			}
+		}
+
+		/* clear the memory with the hash, so nobody is able to dump it. */
+		memset(passwd_md5, 0, sizeof(passwd_md5));
+	}
+
+	/* check if we use aes block cipher algorithm. */
+	if (strcasecmp((char *)encrpytion, "AES") == 0) {
+
+		/* check if we have to truncate source pointer. */
+		if (strlen((char *)key) < 16) {
+
+			/* copy the key to the static buffer. */
+			memcpy(passwd_key, key, strlen((char *)key));
+		} else {
+
+			/* copy the key to the static buffer. */
+			memcpy(passwd_key, key, 16);
+		}
+
+		/* initialize the openssl context. */
+		EVP_CIPHER_CTX_init(&x);
+
+		/* check if cipher initialization is working. */
+		if (EVP_EncryptInit_ex(&x, EVP_aes_128_ecb(), NULL, passwd_key, NULL) == 0) {
+
+			/* clear the memory with the aes key, so nobody is able to dump it. */
+			memset(passwd_key, 0, sizeof(passwd_key));
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* encrypt the input buffer. */
+		if (EVP_EncryptUpdate(&x, passwd_aes, &passwd_size, passwd, strlen((char *)passwd)) == 0) {
+
+			/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
+			memset(passwd_aes, 0, sizeof(passwd_aes));
+			memset(passwd_key, 0, sizeof(passwd_key));
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* encrypt the last block from input buffer. */
+		if (EVP_EncryptFinal_ex(&x, passwd_aes + passwd_size, &temp_size) == 0) {
+
+			/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
+			memset(passwd_aes, 0, sizeof(passwd_aes));
+			memset(passwd_key, 0, sizeof(passwd_key));
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* compute final size. */
+		passwd_size += temp_size;
+
+		/* cleanup cipher context to prevent memory dumping. */
+		EVP_CIPHER_CTX_cleanup(&x);
+
+		/* loop through every byte and compare it. */
+		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
+
+			/* check if our hex value matches the hash byte. (this isn't the fastest way, but okay) */
+			if (htoi(secret_name[2 * count]) * (SIZE_AES * ((SIZE_AES / strlen((char *)passwd)) - 1)) + htoi(secret_name[2 * count + 1]) != passwd_aes[count]) {
+
+				/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
+				memset(passwd_aes, 0, sizeof(passwd_aes));
+				memset(passwd_key, 0, sizeof(passwd_key));
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_PASSWORD;
+			}
+		}
+
+		/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
+		memset(passwd_aes, 0, sizeof(passwd_aes));
+		memset(passwd_key, 0, sizeof(passwd_key));
+	}
+
+	/* if no error was found, establish link. */
+	return 0;
 }

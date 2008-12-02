@@ -22,17 +22,36 @@
 #ifndef _PLUGIN_H
 #define _PLUGIN_H
 
+/* configuration includes. */
+#include "config.h"
+
+/* autoconf declares VERSION which is declared in pppd.h too. */
+#ifdef VERSION
+#undef VERSION
+#endif
+
 /* generic includes. */
 #include <stdint.h>
+#include <unistd.h>
+
+/* ppp includes. */
+#include <pppd/chap-new.h>
+#include <pppd/md5.h>
+#include <pppd/pppd.h>
+
+/* openssl includes. */
+#include <openssl/ssl.h>
 
 /* define errors. */
-#define SQL_ERROR_INCOMPLETE		-1	/* the supplied sql information from configuration file are not complete. */
-#define SQL_ERROR_INIT			-2	/* the initialization of the sql structure failed. */
-#define SQL_ERROR_OPTION		-3	/* some unknown sql options were given. */
-#define SQL_ERROR_CONNECT		-4	/* none of the supplied sql servers are working. */
-#define SQL_ERROR_QUERY			-5	/* the given sql query failed. */
+#define PPPD_SQL_ERROR_INCOMPLETE	-1	/* the supplied sql information from configuration file are not complete. */
+#define PPPD_SQL_ERROR_INIT		-2	/* the initialization of the sql structure failed. */
+#define PPPD_SQL_ERROR_OPTION		-3	/* some unknown sql options were given. */
+#define PPPD_SQL_ERROR_CONNECT		-4	/* none of the supplied sql servers are working. */
+#define PPPD_SQL_ERROR_QUERY		-5	/* the given sql query failed. */
+#define PPPD_SQL_ERROR_PASSWORD		-6	/* the given password is wrong. */
 
 /* define constants. */
+#define SIZE_AES			16	/* the size of an AES128 result. */
 #define SIZE_MD5			16	/* the size of a MD5 hash. */
 #define SIZE_CRYPT			13	/* the size of the crypt() DES result. */
 
@@ -59,6 +78,14 @@ void pppd__ip_choose(
 /* this function set whether the plugin is allowed to set client ip addresses. */
 int32_t pppd__allowed_address(
 	uint32_t	addr
+);
+
+/* this function verify the given password. */
+int32_t pppd__verify_password(
+	uint8_t		*passwd,
+	uint8_t		*secret_name,
+	uint8_t		*encrpytion,
+	uint8_t		*key
 );
 
 #endif					/* _PLUGIN_H */

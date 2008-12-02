@@ -21,8 +21,8 @@
  */
 
 /* generic plugin includes. */
-#include "plugin-mysql.h"
 #include "plugin.h"
+#include "plugin-mysql.h"
 #include "str.h"
 
 /* auth plugin includes. */
@@ -72,7 +72,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		error("Plugin %s: MySQL information are not complete\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_INCOMPLETE;
+		return PPPD_SQL_ERROR_INCOMPLETE;
 	}
 
 	/* check if passwords are encrypted. */
@@ -86,7 +86,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			error("Plugin: %s: MySQL encryption information are not complete\n", PLUGIN_NAME_MYSQL);
 
 			/* return with error and terminate link. */
-			return SQL_ERROR_INCOMPLETE;
+			return PPPD_SQL_ERROR_INCOMPLETE;
 		}
 	}
 
@@ -97,7 +97,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		error("Plugin %s: MySQL initialization failed\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_INIT;
+		return PPPD_SQL_ERROR_INIT;
 	}
 
 	/* set mysql connect timeout. */
@@ -106,7 +106,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		info("Plugin %s: MySQL options are unknown\n", PLUGIN_NAME_MYSQL);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_OPTION;
+		return PPPD_SQL_ERROR_OPTION;
 	}
 
 	/* loop through all server tokens. */
@@ -163,7 +163,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		mysql_close(&mysql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_CONNECT;
+		return PPPD_SQL_ERROR_CONNECT;
 	}
 
 	/* build query for database. */
@@ -206,7 +206,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		mysql_close(&mysql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_QUERY;
+		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* check if mysql result was successfully stored. */
@@ -222,7 +222,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			mysql_close(&mysql);
 
 			/* return with error and terminate link. */
-			return SQL_ERROR_QUERY;
+			return PPPD_SQL_ERROR_QUERY;
 		}
 	}
 
@@ -236,7 +236,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		mysql_close(&mysql);
 
 		/* return with error and terminate link. */
-		return SQL_ERROR_QUERY;
+		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* fetch mysql row, we only take care of first row. */
@@ -261,7 +261,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			mysql_close(&mysql);
 
 			/* return with error and terminate link. */
-			return SQL_ERROR_QUERY;
+			return PPPD_SQL_ERROR_QUERY;
 		}
 
 		/* if we reach this point, check only if column is NULL and transform it. */
@@ -294,7 +294,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 				mysql_close(&mysql);
 
 				/* return with error and terminate link. */
-				return SQL_ERROR_QUERY;
+				return PPPD_SQL_ERROR_QUERY;
 			}
 		}
 	}
@@ -336,114 +336,26 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
-	uint8_t *passwd_encrypted = NULL;
 	int32_t secret_length     = 0;
-	uint32_t count            = 0;
-	MD5_CTX ctx;
 
 	/* check if mysql fetching was successful. */
 	if (pppd__mysql_password(user, secret_name, &secret_length) < 0) {
+
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
 
 		/* return with error and terminate link. */
 		return 0;
 	}
 
-	/* check if we use no algorithm. */
-	if (strcasecmp(pppd_mysql_pass_encryption, "NONE") == 0) {
+	/* check if the password is correct. */
+	if (pppd__verify_password(passwd, secret_name, pppd_mysql_pass_encryption, pppd_mysql_pass_key) < 0) {
 
-		/* check if we found valid password. */
-		if (strcmp(passwd, secret_name) != 0) {
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
 
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-	}
-
-	/* check if we use des crypt algorithm. */
-	if (strcasecmp(pppd_mysql_pass_encryption, "CRYPT") == 0) {
-
-		/* check if secret from database is shorter than an expected crypt() result. */
-		if (strlen(secret_name) < SIZE_CRYPT) {
-
-			/* clear the memory with the hash, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* check if password was successfully encrypted. */
-		if ((passwd_encrypted = crypt(passwd, pppd_mysql_pass_key)) == NULL) {
-
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* check if we found valid password. */
-		if (memcmp(secret_name, passwd_encrypted, SIZE_CRYPT) != 0) {
-
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-	}
-
-	/* check if we use md5 hashing algorithm. */
-	if (strcasecmp(pppd_mysql_pass_encryption, "MD5") == 0) {
-
-		/* check if secret from database is shorter than an expected md5 hash. */
-		if (strlen(secret_name) < (SIZE_MD5 * 2)) {
-
-			/* clear the memory with the hash, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* allocate memory for the encrypted password. (well using dynamic memory allocation in the plugin is not the optimal result, i'll fix it later) */
-		if ((passwd_encrypted = calloc(SIZE_MD5, sizeof(passwd_encrypted))) == NULL) {
-
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
-			/* return with error and terminate link. */
-			return 0;
-		}
-
-		/* compute md5 hash. */
-		MD5_Init(&ctx);
-		MD5_Update(&ctx, passwd, strlen(passwd));
-		MD5_Final(passwd_encrypted, &ctx);
-
-		/* loop through every byte and compare it. */
-		for (count = 0; count < (strlen(secret_name) / 2); count++) {
-
-			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
-			if (htoi(secret_name[2 * count]) * SIZE_MD5 + htoi(secret_name[2 * count + 1]) != passwd_encrypted[count]) {
-
-				/* clear the memory with the hash, so nobody is able to dump it. */
-				memset(secret_name, 0, sizeof(secret_name));
-				memset(passwd_encrypted, 0, sizeof(passwd_encrypted));
-
-				/* free the allocated memory. */
-				free(passwd_encrypted);
-
-				/* return with error and terminate link. */
-				return 0;
-			}
-		}
-
-		/* free the allocated memory. */
-		free(passwd_encrypted);
+		/* return with error and terminate link. */
+		return 0;
 	}
 
 	/* if no error was found, establish link. */

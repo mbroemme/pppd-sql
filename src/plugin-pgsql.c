@@ -20,8 +20,8 @@
  */
 
 /* generic plugin includes. */
-#include "plugin-pgsql.h"
 #include "plugin.h"
+#include "plugin-pgsql.h"
 
 /* plugin auth includes. */
 #include "auth-pgsql.h"
