@@ -88,6 +88,10 @@ if test "$enable_mysql" = "yes"; then
 	AC_PATH_PROG([mysql_config], [mysql_config], [AC_MSG_ERROR([*** mysql_config is required, install mysql development files])])
 fi
 
+# checking openssl library.
+AC_CHECK_HEADER([openssl/evp.h])
+AC_CHECK_LIB([crypto], [EVP_CIPHER_CTX_init])
+
 # checking if mysql should be autodetected.
 if test -z "$enable_mysql"; then
 
@@ -140,7 +144,6 @@ if test "$ac_cv_header_libpq_fe_h" = "yes" -a -n "$pg_config"; then
 	# define the postgresql name and version.
 	AC_DEFINE_UNQUOTED(PLUGIN_NAME_PGSQL, "pgsql", [Plugin name as Prefix.])
 	AC_DEFINE_UNQUOTED(PLUGIN_VERSION_PGSQL, "$(pg_config --version | $sedpath 's/.* //')", [Plugin version for PostgreSQL.])
-
 fi
 
 # define automake rule for compiling.
