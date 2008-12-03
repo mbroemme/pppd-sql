@@ -1,3 +1,16 @@
+Changes version 0.4.0 (2008-12-03)
+==================================
+
+    * Added support for encrypted Password storage inside database.
+      (MD5 and crypt() as hash and AES as symmetric block cipher)
+
+    * Four new PPP configuration options were added:
+
+        - mysql-pass-encryption
+        - mysql-pass-key
+        - pgsql-pass-encryption
+        - pgsql-pass-key
+
 Changes version 0.3.0 (2008-11-28)
 ==================================
 
