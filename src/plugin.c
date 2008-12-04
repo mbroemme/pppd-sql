@@ -65,7 +65,7 @@ int32_t pppd__allowed_address(uint32_t addr) {
 int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *encrpytion, uint8_t *key) {
 
 	/* some common variables. */
-	uint8_t passwd_aes[SIZE_AES * ((SIZE_AES / strlen((char *)passwd)) - 1)];
+	uint8_t passwd_aes[SIZE_AES];
 	uint8_t passwd_key[SIZE_AES];
 	uint8_t passwd_md5[SIZE_MD5];
 	uint8_t *passwd_crypt = NULL;
@@ -95,7 +95,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	if (strcasecmp((char *)encrpytion, "CRYPT") == 0) {
 
 		/* check if secret from database is shorter than an expected crypt() result. */
-		if (strlen((char *)secret_name) < SIZE_CRYPT) {
+		if (strlen((char *)secret_name) < (SIZE_CRYPT * 2)) {
 
 			/* return with error and terminate link. */
 			return PPPD_SQL_ERROR_PASSWORD;
@@ -108,11 +108,18 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 			return PPPD_SQL_ERROR_PASSWORD;
 		}
 
-		/* check if we found valid password. */
-		if (memcmp(secret_name, passwd_crypt, SIZE_CRYPT) != 0) {
+		/* loop through every byte and compare it. */
+		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
 
-			/* return with error and terminate link. */
-			return PPPD_SQL_ERROR_PASSWORD;
+			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 13 byte) */
+			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != passwd_crypt[count]) {
+
+				/* clear the memory with the hash, so nobody is able to dump it. */
+				memset(passwd_crypt, 0, sizeof(passwd_crypt));
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_PASSWORD;
+			}
 		}
 	}
 
@@ -169,7 +176,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
 
 			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
-			if (htoi(secret_name[2 * count]) * SIZE_MD5 + htoi(secret_name[2 * count + 1]) != passwd_md5[count]) {
+			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != passwd_md5[count]) {
 
 				/* clear the memory with the hash, so nobody is able to dump it. */
 				memset(passwd_md5, 0, sizeof(passwd_md5));
@@ -258,7 +265,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
 
 			/* check if our hex value matches the hash byte. (this isn't the fastest way, but okay) */
-			if (htoi(secret_name[2 * count]) * (SIZE_AES * ((SIZE_AES / strlen((char *)passwd)) - 1)) + htoi(secret_name[2 * count + 1]) != passwd_aes[count]) {
+			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != passwd_aes[count]) {
 
 				/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
 				memset(passwd_aes, 0, sizeof(passwd_aes));
