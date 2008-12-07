@@ -44,6 +44,26 @@ The MySQL username for database authentication.
 \fBmysql-pass\fP \fIpassword\fP
 The MySQL password for database authentication.
 .TP
+\fBmysql-pass-encryption\fP \fIencryption\fP
+The MySQL encryption type used for the passwords in \fBmysql-pass\fP. Possible values are:
+.RS 7
+.TP 8
+\fBNONE\fP  \(bu
+Passwords are stored in plaintext.
+.TP
+\fBCRYPT\fP \(bu
+Passwords are stored using UNIX crypt() algorithm.
+.TP
+\fBMD5\fP   \(bu
+Passwords are stored using MD5 one-way hashing algorithm.
+.TP
+\fBAES\fP   \(bu
+Passwords are stored using AES (128-Bit Electronic Codebook Mode) symmetric cipher algorithm.
+.RE
+.TP
+\fBmysql-pass-key\fP \fIkey\fP
+The key for the symmetric block cipher or the salt for the one-way hash function. This paramter is required if \fBmysql-pass-encryption\fP is set to \fBAES\fP or \fBCRYPT\fP.
+.TP
 \fBmysql-database\fP \fIdatabase\fP
 The MySQL database to connect.
 .TP
