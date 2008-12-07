@@ -32,7 +32,6 @@
 
 /* generic includes. */
 #include <stdint.h>
-#include <unistd.h>
 
 /* ppp includes. */
 #include <pppd/chap-new.h>
@@ -40,7 +39,8 @@
 #include <pppd/pppd.h>
 
 /* openssl includes. */
-#include <openssl/ssl.h>
+#include <openssl/des.h>
+#include <openssl/evp.h>
 
 /* define errors. */
 #define PPPD_SQL_ERROR_INCOMPLETE	-1	/* the supplied sql information from configuration file are not complete. */

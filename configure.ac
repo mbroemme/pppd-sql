@@ -1,5 +1,5 @@
 # the autoconf initilization.
-AC_INIT(pppd-sql, 0.3.0, [mbroemme@plusserver.de], [pppd-sql])
+AC_INIT(pppd-sql, 0.4.0, [mbroemme@plusserver.de], [pppd-sql])
 
 # detect the canonical host and target build environment.
 AC_CANONICAL_SYSTEM
@@ -28,7 +28,6 @@ if test "$enable_static" = "yes"; then
 fi
 
 # checking for programs.
-AC_GNU_SOURCE
 AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
@@ -89,8 +88,11 @@ if test "$enable_mysql" = "yes"; then
 fi
 
 # checking openssl library.
+AC_CHECK_HEADER([openssl/des.h])
 AC_CHECK_HEADER([openssl/evp.h])
 AC_CHECK_LIB([crypto], [EVP_CIPHER_CTX_init])
+AC_CHECK_LIB([crypto], [EVP_MD_CTX_init])
+AC_CHECK_LIB([crypto], [DES_crypt])
 
 # checking if mysql should be autodetected.
 if test -z "$enable_mysql"; then

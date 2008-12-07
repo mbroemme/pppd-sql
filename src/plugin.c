@@ -102,7 +102,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		}
 
 		/* check if password was successfully encrypted. */
-		if ((passwd_crypt = (uint8_t *)crypt((char *)passwd, (char *)key)) == NULL) {
+		if ((passwd_crypt = (uint8_t *)DES_crypt((char *)passwd, (char *)key)) == NULL) {
 
 			/* return with error and terminate link. */
 			return PPPD_SQL_ERROR_PASSWORD;
