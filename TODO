@@ -3,9 +3,6 @@ Features and functionality which should be added in the future.
     * Well no real feature but needs to be done. Testing, testing and
       more testing. Maybe there exist unknown bugs. :)
 
-    * Add support for encrypted Password storage inside database.
-      (MD5 or Crypt)
-
     * Add support for other database backends. (Firebird/InterBase,
       Ingres and SQLite)
 
