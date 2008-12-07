@@ -8,28 +8,45 @@ and one-way hashes below.
 Which ciphers and hashes are supported?
 =======================================
 
-The list below includes a security level between 1 and 5, where 1 is
-lowest and 5 highest security. Please keep in mind, that the choice
-of the algorithm isn't the whole job. The key length and especially the
-chaining mode for the symmetric ciphers are very important!
+The list below includes a list of supported ciphers and one-way hashes
+and an example how to use it in MySQL. (It can be easily adapted for
+other databases)
 
   * UNIX crypt() (non-standard DES-56)
-    $ glibc extension
-      - security level 1
-      - PAP support
+    - OpenSSL extension
+    - PAP support
+
+      mysql> SELECT HEX(ENCRYPT('foo', 'bar'));
+      +----------------------------+
+      | HEX(ENCRYPT('foo', 'bar')) |
+      +----------------------------+
+      | 62613454754431696F7A547877 | 
+      +----------------------------+
 
   * MD5-128
-    $ OpenSSL extension
-      - security level 3
-      - PAP support
+    - OpenSSL extension
+    - PAP support
+
+      mysql> SELECT MD5('foo');
+      +----------------------------------+
+      | MD5('foo')                       |
+      +----------------------------------+
+      | acbd18db4cc2f85cedef654fccc4a4d8 | 
+      +----------------------------------+
 
   * AES-128-ECB
-    $ OpenSSL extension
-      - security level 3
-      - PAP, CHAP, MS-CHAPv1 and MS-CHAPv2 support
+    - OpenSSL extension
+    - PAP, CHAP, MS-CHAPv1 and MS-CHAPv2 support
 
-How are the cipher and hases stored?
-====================================
+      mysql> SELECT HEX(AES_ENCRYPT('foo', 'bar'));
+      +----------------------------------+
+      | HEX(AES_ENCRYPT('foo', 'bar'))   |
+      +----------------------------------+
+      | 93F254924801B8B0F000571DFD8C4A5E | 
+      +----------------------------------+
+
+How are the cipher and hashes stored?
+=====================================
 
 Every encrypted data is stored as a hexadecimal number. This format is
 used because it can be represented in every database with a simple
