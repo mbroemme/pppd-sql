@@ -25,7 +25,7 @@ A: Yes it is, this was the main reason for creating this plugin.
 
 Q: Can PAP passwords stored in database using an 'one-way' hash?
 A: Yes they can, because with PAP the passwords are transferred in
-   plaintext, so the plugin can create a hash from it and compared it
+   plaintext, so the plugin can create a hash from it and compare it
    with the hash stored in database.
 
 Q: Can CHAP, MS-CHAPv1 and MS-CHAPv2 passwords stored in database
