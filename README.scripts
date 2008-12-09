@@ -1,0 +1,26 @@
+Introduction
+============
+
+The first support for any kind of importable SQL-Dumps was introduced
+in version 0.5.0 of 'pppd-sql' to simplify the installation process.
+
+Which empty SQL-Dumps are currently included?
+=============================================
+
+The list below includes a list of included empty SQL-Dumps and an
+example how to import them. All dumps are using UTF-8 as charset
+encoding.
+
+  * MySQL
+    - File     = ppp-login-mysql.sql
+    - Command  = mysql -u root -p < ppp-login-mysql.sql
+
+  * PostgreSQL
+    - File     = ppp-login-postgresql.sql
+    - Command  = psql -U root -d postgres -f ppp-login-postgresql.sql
+
+The result will be in every case a database with the name 'ppp' and a
+table 'login' with four fields. The first field is an auto increment
+identifier, the second is the username, third is the password and
+fourth field is the ip address which should be assigned after ip
+negotiation.
