@@ -41,6 +41,7 @@ uint8_t *pppd_mysql_column_user		= NULL;
 uint8_t *pppd_mysql_column_pass		= NULL;
 uint8_t *pppd_mysql_column_ip		= NULL;
 uint8_t *pppd_mysql_condition		= NULL;
+uint32_t pppd_mysql_authoritative	= 0;
 uint32_t pppd_mysql_ignore_multiple	= 0;
 uint32_t pppd_mysql_ignore_null		= 0;
 uint32_t pppd_mysql_connect_timeout	= 5;
@@ -65,6 +66,7 @@ option_t options[] = {
 	{ "mysql-column-pass", o_string, &pppd_mysql_column_pass, "Set MySQL password field"},
 	{ "mysql-column-ip", o_string, &pppd_mysql_column_ip, "Set MySQL client ip address field"},
 	{ "mysql-condition", o_string, &pppd_mysql_condition, "Set MySQL condition clause"},
+	{ "mysql-authoritative", o_bool, &pppd_mysql_authoritative, "Set MySQL to be authoritative authenticator", 0 | 1},
 	{ "mysql-ignore-multiple", o_bool, &pppd_mysql_ignore_multiple, "Set MySQL to cover first row from multiple rows", 0 | 1},
 	{ "mysql-ignore-null", o_bool, &pppd_mysql_ignore_null, "Set MySQL to cover NULL results as string", 0 | 1},
 	{ "mysql-connect-timeout", o_int, &pppd_mysql_connect_timeout, "Set MySQL connection timeout"},

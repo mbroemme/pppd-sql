@@ -48,6 +48,7 @@ extern uint8_t *pppd_pgsql_column_user;
 extern uint8_t *pppd_pgsql_column_pass;
 extern uint8_t *pppd_pgsql_column_ip;
 extern uint8_t *pppd_pgsql_condition;
+extern uint32_t pppd_pgsql_authoritative;
 extern uint32_t pppd_pgsql_ignore_multiple;
 extern uint32_t pppd_pgsql_ignore_null;
 extern uint32_t pppd_pgsql_connect_timeout;

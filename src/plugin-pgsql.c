@@ -41,6 +41,7 @@ uint8_t *pppd_pgsql_column_user		= NULL;
 uint8_t *pppd_pgsql_column_pass		= NULL;
 uint8_t *pppd_pgsql_column_ip		= NULL;
 uint8_t *pppd_pgsql_condition		= NULL;
+uint32_t pppd_pgsql_authoritative	= 0;
 uint32_t pppd_pgsql_ignore_multiple	= 0;
 uint32_t pppd_pgsql_ignore_null		= 0;
 uint32_t pppd_pgsql_connect_timeout	= 5;
@@ -65,6 +66,7 @@ option_t options[] = {
 	{ "pgsql-column-pass", o_string, &pppd_pgsql_column_pass, "Set PostgreSQL password field"},
 	{ "pgsql-column-ip", o_string, &pppd_pgsql_column_ip, "Set PostgreSQL client ip address field"},
 	{ "pgsql-condition", o_string, &pppd_pgsql_condition, "Set PostgreSQL condition clause"},
+	{ "pgsql-authoritative", o_bool, &pppd_pgsql_authoritative, "Set PostgreSQL to be authoritative authenticator", 0 | 1},
 	{ "pgsql-ignore-multiple", o_bool, &pppd_pgsql_ignore_multiple, "Set PostgreSQL to cover first row from multiple rows", 0 | 1},
 	{ "pgsql-ignore-null", o_bool, &pppd_pgsql_ignore_null, "Set PostgreSQL to cover NULL results as string", 0 | 1},
 	{ "pgsql-connect-timeout", o_int, &pppd_pgsql_connect_timeout, "Set PostgreSQL connection timeout"},

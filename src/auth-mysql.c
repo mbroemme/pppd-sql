@@ -344,8 +344,16 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 		/* clear the memory with the password, so nobody is able to dump it. */
 		memset(secret_name, 0, sizeof(secret_name));
 
-		/* return with error and terminate link. */
-		return 0;
+		/* check if mysql is authoritative. */
+		if (pppd_mysql_authoritative == 1) {
+
+			/* return with error and terminate link. */
+			return 0;
+		} else {
+
+			/* return with error and terminate link. */
+			return -1;
+		}
 	}
 
 	/* check if the password is correct. */
@@ -354,8 +362,16 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 		/* clear the memory with the password, so nobody is able to dump it. */
 		memset(secret_name, 0, sizeof(secret_name));
 
-		/* return with error and terminate link. */
-		return 0;
+		/* check if mysql is authoritative. */
+		if (pppd_mysql_authoritative == 1) {
+
+			/* return with error and terminate link. */
+			return 0;
+		} else {
+
+			/* return with error and terminate link. */
+			return -1;
+		}
 	}
 
 	/* if no error was found, establish link. */
