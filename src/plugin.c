@@ -68,7 +68,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	uint8_t passwd_aes[SIZE_AES];
 	uint8_t passwd_key[SIZE_AES];
 	uint8_t passwd_md5[SIZE_MD5];
-	uint8_t *passwd_crypt = NULL;
+	uint8_t passwd_crypt[SIZE_CRYPT];
 	uint32_t count        = 0;
 	int32_t passwd_size   = 0;
 	int32_t temp_size     = 0;
@@ -79,6 +79,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	memset(passwd_aes, 0, sizeof(passwd_aes));
 	memset(passwd_key, 0, sizeof(passwd_key));
 	memset(passwd_md5, 0, sizeof(passwd_md5));
+	memset(passwd_crypt, 0, sizeof(passwd_crypt));
 
 	/* check if we use no algorithm. */
 	if (strcasecmp((char *)encrpytion, "NONE") == 0) {
@@ -102,7 +103,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		}
 
 		/* check if password was successfully encrypted. */
-		if ((passwd_crypt = (uint8_t *)DES_crypt((char *)passwd, (char *)key)) == NULL) {
+		if ((uint8_t *)DES_fcrypt((char *)passwd, (char *)key, (char *)passwd_crypt) == NULL) {
 
 			/* return with error and terminate link. */
 			return PPPD_SQL_ERROR_PASSWORD;
