@@ -88,11 +88,11 @@ if test "$enable_mysql" = "yes"; then
 fi
 
 # checking openssl library.
-AC_CHECK_HEADER([openssl/des.h])
-AC_CHECK_HEADER([openssl/evp.h])
-AC_CHECK_LIB([crypto], [EVP_CIPHER_CTX_init])
-AC_CHECK_LIB([crypto], [EVP_MD_CTX_init])
-AC_CHECK_LIB([crypto], [DES_crypt])
+AC_CHECK_HEADER([openssl/des.h], [], [AC_MSG_ERROR([*** des.h is required, install openssl header files])])
+AC_CHECK_HEADER([openssl/evp.h], [], [AC_MSG_ERROR([*** evp.h is required, install openssl header files])])
+AC_CHECK_LIB([crypto], [EVP_CIPHER_CTX_init], [], [AC_MSG_ERROR([*** EVP_CIPHER_CTX_init is required, install openssl library files])])
+AC_CHECK_LIB([crypto], [EVP_MD_CTX_init], [], [AC_MSG_ERROR([*** EVP_MD_CTX_init is required, install openssl library files])])
+AC_CHECK_LIB([crypto], [DES_crypt], [], [AC_MSG_ERROR([*** DES_crypt is required, install openssl library files])])
 
 # checking if mysql should be autodetected.
 if test -z "$enable_mysql"; then
