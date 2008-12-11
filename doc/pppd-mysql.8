@@ -82,6 +82,9 @@ The MySQL column which stores the client ip address.
 \fBmysql-condition\fP \fIquery\fP
 This is an extra MySQL condition, if you need to join additional tables for username verification.
 .TP
+\fBmysql-authoritative\fP
+If this option is set, the plugin will authenticate only against the database and if it fails the link will be terminated. If this option is not set, the plugin will fallback on authentication failure to usual \fI/etc/ppp/pap-secrets\fP and \fI/etc/ppp/chap-secrets\fP files. (Default: not set)
+.TP
 \fBmysql-ignore-multiple\fP
 If this option is set, the plugin will ignore multiple result sets with the same username. The plugin will take the first entry and verifiy it against password. If this option is not set, the plugin will deny authentication and terminate the link. (Default: not set)
 .TP
