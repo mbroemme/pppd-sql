@@ -65,7 +65,7 @@ int32_t pppd__allowed_address(uint32_t addr) {
 int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *encrpytion, uint8_t *key) {
 
 	/* some common variables. */
-	uint8_t passwd_aes[SIZE_AES];
+	uint8_t passwd_aes[MAXSECRETLEN / 2];
 	uint8_t passwd_key[SIZE_AES];
 	uint8_t passwd_md5[SIZE_MD5];
 	uint8_t passwd_crypt[SIZE_CRYPT];
@@ -195,21 +195,21 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	if (strcasecmp((char *)encrpytion, "AES") == 0) {
 
 		/* check if secret from database is shorter than an expected minimum aes size. */
-		if (strlen((char *)secret_name) < (SIZE_AES * 2)) {
+		if (strlen((char *)secret_name) < (((strlen((char *)passwd) / 16) + 1) * 16)) {
 
 			/* return with error and terminate link. */
 			return PPPD_SQL_ERROR_PASSWORD;
 		}
 
 		/* check if we have to truncate source pointer. */
-		if (strlen((char *)key) < 16) {
+		if (strlen((char *)key) < SIZE_AES) {
 
 			/* copy the key to the static buffer. */
 			memcpy(passwd_key, key, strlen((char *)key));
 		} else {
 
 			/* copy the key to the static buffer. */
-			memcpy(passwd_key, key, 16);
+			memcpy(passwd_key, key, SIZE_AES);
 		}
 
 		/* initialize the openssl context. */
