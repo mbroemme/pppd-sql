@@ -88,4 +88,12 @@ int32_t pppd__verify_password(
 	uint8_t		*key
 );
 
+/* this function decrypt the given password. */
+int32_t pppd__decrypt_password(
+	uint8_t		*secret_name,
+	int32_t		*secret_length,
+	uint8_t		*encrpytion,
+	uint8_t		*key
+);
+
 #endif					/* _PLUGIN_H */

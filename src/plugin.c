@@ -69,9 +69,9 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	uint8_t passwd_key[SIZE_AES];
 	uint8_t passwd_md5[SIZE_MD5];
 	uint8_t passwd_crypt[SIZE_CRYPT];
-	uint32_t count        = 0;
-	int32_t passwd_size   = 0;
-	int32_t temp_size     = 0;
+	uint32_t count      = 0;
+	int32_t passwd_size = 0;
+	int32_t temp_size   = 0;
 	EVP_MD_CTX ctx_md5;
 	EVP_CIPHER_CTX ctx_aes;
 
@@ -278,6 +278,115 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		}
 
 		/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
+		memset(passwd_aes, 0, sizeof(passwd_aes));
+		memset(passwd_key, 0, sizeof(passwd_key));
+	}
+
+	/* if no error was found, establish link. */
+	return 0;
+}
+
+/* this function decrypt the given password. */
+int32_t pppd__decrypt_password(uint8_t *secret_name, int32_t *secret_length, uint8_t *encrpytion, uint8_t *key) {
+
+	/* some common variables. */
+	uint8_t passwd_aes[MAXSECRETLEN / 2];
+	uint8_t passwd_key[SIZE_AES];
+	uint32_t count        = 0;
+	int32_t passwd_size   = 0;
+	int32_t temp_size     = 0;
+	EVP_CIPHER_CTX ctx_aes;
+
+	/* check if we use no algorithm. */
+	if (strcasecmp((char *)encrpytion, "NONE") == 0 ||
+	    strcasecmp((char *)encrpytion, "CRYPT") == 0 ||
+	    strcasecmp((char *)encrpytion, "MD5") == 0) {
+
+		/* no encryption or non-symmetric algorithm used. */
+		return 0;
+	}
+
+	/* check if we use aes block cipher algorithm. */
+	if (strcasecmp((char *)encrpytion, "AES") == 0) {
+
+		/* cleanup the static array. */
+		memset(passwd_aes, 0, sizeof(passwd_aes));
+		memset(passwd_key, 0, sizeof(passwd_key));
+
+		/* check if we have to truncate source pointer. */
+		if (strlen((char *)key) < SIZE_AES) {
+
+			/* copy the key to the static buffer. */
+			memcpy(passwd_key, key, strlen((char *)key));
+		} else {
+
+			/* copy the key to the static buffer. */
+			memcpy(passwd_key, key, SIZE_AES);
+		}
+
+		/* loop through every byte and convert it. */
+		for (count = 0; count < (*secret_length / 2); count++) {
+
+			/* create binary data for decryption. */
+			passwd_aes[count] = htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]);
+		}
+
+		/* initialize the openssl context. */
+		EVP_CIPHER_CTX_init(&ctx_aes);
+
+		/* check if cipher initialization is working. */
+		if (EVP_DecryptInit_ex(&ctx_aes, EVP_aes_128_ecb(), NULL, passwd_key, NULL) == 0) {
+
+			/* cleanup cipher context to prevent memory dumping. */
+			EVP_CIPHER_CTX_cleanup(&ctx_aes);
+
+			/* clear the memory with the aes key and password, so nobody is able to dump it. */
+			memset(passwd_aes, 0, sizeof(passwd_aes));
+			memset(passwd_key, 0, sizeof(passwd_key));
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* decrypt the input buffer. */
+		if (EVP_DecryptUpdate(&ctx_aes, secret_name, &passwd_size, passwd_aes, *secret_length / 2) == 0) {
+
+			/* cleanup cipher context to prevent memory dumping. */
+			EVP_CIPHER_CTX_cleanup(&ctx_aes);
+
+			/* clear the memory with the aes key, password and buffer, so nobody is able to dump it. */
+			memset(passwd_aes, 0, sizeof(passwd_aes));
+			memset(passwd_key, 0, sizeof(passwd_key));
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* decrypt the last block from input buffer. */
+		if (EVP_DecryptFinal_ex(&ctx_aes, secret_name + passwd_size, &temp_size) == 0) {
+
+			/* cleanup cipher context to prevent memory dumping. */
+			EVP_CIPHER_CTX_cleanup(&ctx_aes);
+
+			/* clear the memory with the aes key, password and buffer, so nobody is able to dump it. */
+			memset(passwd_aes, 0, sizeof(passwd_aes));
+			memset(passwd_key, 0, sizeof(passwd_key));
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_PASSWORD;
+		}
+
+		/* cleanup cipher context to prevent memory dumping. */
+		EVP_CIPHER_CTX_cleanup(&ctx_aes);
+
+		/* compute final size. */
+		passwd_size += temp_size;
+
+		/* terminate the cleartext password. */
+		secret_name[passwd_size] = '\0';
+		*secret_length = passwd_size;
+
+		/* clear the memory with the aes key, password and buffer, so nobody is able to dump it. */
 		memset(passwd_aes, 0, sizeof(passwd_aes));
 		memset(passwd_key, 0, sizeof(passwd_key));
 	}

@@ -350,6 +350,19 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	/* check if postgresql fetching was successful. */
 	if (pppd__pgsql_password((uint8_t *)name, secret_name, &secret_length) < 0 && pppd_pgsql_authoritative == 1) {
 
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
+
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* check if password decryption was correct. */
+	if (pppd__decrypt_password(secret_name, &secret_length, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) < 0 && pppd_pgsql_authoritative == 1) {
+
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
+
 		/* return with error and terminate link. */
 		return 0;
 	}
@@ -362,6 +375,9 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 
 		/* get the secret that the peer is supposed to know. */
 		if (get_secret(0, name, ourname, (char *)secret_name, &secret_length, 1) == 0) {
+
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
 
 			/* show user that fallback also fails. */
 			error("No CHAP secret found for authenticating %q", name);
@@ -386,7 +402,7 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
-	int32_t secret_length     = 0;
+	int32_t secret_length = 0;
 
 	/* check if postgresql fetching was successful. */
 	if (pppd__pgsql_password((uint8_t *)user, secret_name, &secret_length) < 0) {
