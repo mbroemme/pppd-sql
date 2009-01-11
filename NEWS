@@ -1,3 +1,16 @@
+Changes version 0.5.0 (2009-01-12)
+==================================
+
+    * Added support for authentication fallback against usual files
+      '/etc/ppp/pap-secrets' or '/etc/ppp/chap-secrets'.
+
+    * Two new PPP configuration options were added:
+
+        - mysql-authoritative
+        - pgsql-authoritative
+
+    * Added 'scripts' directory with database schemas for import.
+
 Changes version 0.4.0 (2008-12-07)
 ==================================
 
