@@ -239,6 +239,16 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		return PPPD_SQL_ERROR_QUERY;
 	}
 
+	/* check if we have at least one row. */
+	if (mysql_num_rows(result) == 0) {
+
+		/* close the connection. */
+		mysql_close(&mysql);
+
+		/* return with error and terminate link. */
+		return PPPD_SQL_ERROR_QUERY;
+	}
+
 	/* fetch mysql row, we only take care of first row. */
 	row = mysql_fetch_row(result);
 
