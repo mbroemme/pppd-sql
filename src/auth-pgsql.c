@@ -111,6 +111,20 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		}
 	}
 
+	/* check if concurrent connection from one user should be denied. */
+	if (pppd_pgsql_exclusive == 1) {
+
+		/* check if update column is given. */
+		if (pppd_pgsql_column_update == NULL) {
+
+			/* some required exclusive information are missing. */
+			error("Plugin: %s: PostgreSQL exclusive information are not complete\n", PLUGIN_NAME_PGSQL);
+
+			/* return with error and terminate link. */
+			return PPPD_SQL_ERROR_INCOMPLETE;
+		}
+	}
+
 	/* loop through all server tokens. */
 	while ((token_pgsql_uri = pppd__strsep(&pppd_pgsql_host, (unsigned char *)",")) != NULL) {
 
