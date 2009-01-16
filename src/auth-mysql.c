@@ -330,10 +330,10 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
-	int32_t ok            = 0;
 
 	/* check if mysql fetching was successful. */
-	if (pppd__mysql_password(name, secret_name, &secret_length) < 0 && pppd_mysql_authoritative == 1) {
+	if (pppd__mysql_password(name, secret_name, &secret_length) < 0 &&
+	    pppd_mysql_authoritative == 1) {
 
 		/* clear the memory with the password, so nobody is able to dump it. */
 		memset(secret_name, 0, sizeof(secret_name));
@@ -343,7 +343,8 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	}
 
 	/* check if password decryption was correct. */
-	if (pppd__decrypt_password(secret_name, &secret_length, pppd_mysql_pass_encryption, pppd_mysql_pass_key) < 0 && pppd_mysql_authoritative == 1) {
+	if (pppd__decrypt_password(secret_name, &secret_length, pppd_mysql_pass_encryption, pppd_mysql_pass_key) < 0 &&
+	    pppd_mysql_authoritative == 1) {
 
 		/* clear the memory with the password, so nobody is able to dump it. */
 		memset(secret_name, 0, sizeof(secret_name));
@@ -353,33 +354,44 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	}
 
 	/* verify discovered secret against the client's response. */
-	ok = digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space);
+	if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) != 1 &&
+	    pppd_mysql_authoritative == 1) {
 
-	/* check the discovered secret against the client's response. */
-	if (ok != 1 && pppd_mysql_authoritative == 1) {
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
 
-		/* get the secret that the peer is supposed to know. */
-		if (get_secret(0, name, ourname, secret_name, &secret_length, 1) == 0) {
+		/* return with error and terminate link. */
+		return 0;
+	}
 
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
+	/* get the secret that the peer is supposed to know. */
+	if (get_secret(0, name, ourname, secret_name, &secret_length, 1) == 0) {
 
-			/* show user that fallback also fails. */
-			error("No CHAP secret found for authenticating %q", name);
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
 
-			/* return with error and terminate link. */
-			return 0;
-		}
+		/* show user that fallback also fails. */
+		error("No CHAP secret found for authenticating %q", name);
 
-		/* verify discovered secret against the client's response. */
-		ok = digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space);
+		/* return with error and terminate link. */
+		return 0;
+	}
+
+	/* verify discovered secret against the client's response. */
+	if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) != 1) {
+
+		/* clear the memory with the password, so nobody is able to dump it. */
+		memset(secret_name, 0, sizeof(secret_name));
+
+		/* return with error and terminate link. */
+		return 0;
 	}
 
 	/* clear the memory with the password, so nobody is able to dump it. */
 	memset(secret_name, 0, sizeof(secret_name));
 
-	/* return status of password verification. */
-	return ok;
+	/* if no error was found, establish link. */
+	return 1;
 }
 
 /* this function check the pap authentication information against a mysql database. */
@@ -424,6 +436,9 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 			return -1;
 		}
 	}
+
+	/* clear the memory with the password, so nobody is able to dump it. */
+	memset(secret_name, 0, sizeof(secret_name));
 
 	/* if no error was found, establish link. */
 	return 1;
