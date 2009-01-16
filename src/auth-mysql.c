@@ -278,9 +278,6 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			/* NULL user account found. */
 			error("Plugin %s: The column %s for %s is NULL in database\n", PLUGIN_NAME_MYSQL, field->name, name);
 
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
-
 			/* close the connection. */
 			mysql_close(&mysql);
 
@@ -310,9 +307,6 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 
 				/* error on converting ip address.*/
 				error("Plugin %s: IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
-
-				/* clear the memory with the password, so nobody is able to dump it. */
-				memset(secret_name, 0, sizeof(secret_name));
 
 				/* close the connection. */
 				mysql_close(&mysql);
