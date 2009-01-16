@@ -19,7 +19,7 @@
 .\" License along with this manual; if not, write to the Free
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
-.TH pppd-pgsql 8 2008-11-20 "The PPP PostgreSQL plugin"
+.TH pppd-pgsql 8 2009-01-16 "The PPP PostgreSQL plugin"
 .SH NAME
 pgsql.so \- PostgreSQL authentication plugin for
 .BR pppd (8)
@@ -79,8 +79,14 @@ The PostgreSQL column which stores the password.
 \fBpgsql-column-ip\fP \fIip-address-field\fP
 The PostgreSQL column which stores the client ip address.
 .TP
+\fBpgsql-column-update\fP \fIupdate-field\fP
+The PostgreSQL column which should be updated after authentication and ip negotiation. This field is only useful, if you use \fBpgsql-exclusive\fP (see below) too. Please keep in mind that this option requires write access to the database.
+.TP
 \fBpgsql-condition\fP \fIquery\fP
 This is an extra PostgreSQL condition, if you need to join additional tables for username verification.
+.TP
+\fBpgsql-exclusive\fP
+If this option is set, the plugin will forbid concurrent connections from the same user. The plugin itself don't know anything about a second connection so this information is stored in database. It is required to set \fBpgsql-column-update\fP to a value in \fBpgsql-table\fP which can be updated. (Default: not set)
 .TP
 \fBpgsql-authoritative\fP
 If this option is set, the plugin will authenticate only against the database and if it fails the link will be terminated. If this option is not set, the plugin will fallback on authentication failure to usual \fI/etc/ppp/pap-secrets\fP and \fI/etc/ppp/chap-secrets\fP files. (Default: not set)
