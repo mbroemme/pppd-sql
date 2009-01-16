@@ -45,9 +45,6 @@ int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const
 int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
 
 	/* some common variables. */
-	uint8_t *token_mysql_uri;
-	uint8_t *token_mysql_host;
-	uint8_t *token_mysql_port;
 	uint8_t query[1024];
 	uint8_t query_extended[1024];
 	uint32_t count     = 0;
@@ -59,6 +56,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 
 	/* check if all information are supplied. */
 	if (pppd_mysql_host		== NULL ||
+	    pppd_mysql_port		== NULL ||
 	    pppd_mysql_user		== NULL ||
 	    pppd_mysql_pass		== NULL ||
 	    pppd_mysql_pass_encryption	== NULL ||
@@ -123,55 +121,11 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		return PPPD_SQL_ERROR_OPTION;
 	}
 
-	/* loop through all server tokens. */
-	while ((token_mysql_uri = pppd__strsep(&pppd_mysql_host, ",")) != NULL) {
-
-		/* extract host and port. */
-		token_mysql_host = pppd__strsep(&token_mysql_uri, ":");
-		token_mysql_port = pppd__strsep(&token_mysql_uri, ":");
-
-		/* strip away leading and trailing whitespaces. */
-		token_mysql_host = pppd__strstrip(token_mysql_host);
-		token_mysql_port = pppd__strstrip(token_mysql_port);
-
-		/* loop through number of connection retries. */
-		for (count = pppd_mysql_retry_connect; count > 0 ; count--) {
-
-			/* check if mysql connection was successfully established. */
-			if (mysql_real_connect(&mysql, token_mysql_host, pppd_mysql_user, pppd_mysql_pass, pppd_mysql_database, (uint32_t)atoi (token_mysql_port ? token_mysql_port: 0), (uint8_t *)NULL, 0) == 0) {
-
-				/* check if it was last connection try. */
-				if (count == 1) {
-
-					/* something on establishing connection failed. */
-					pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
-				}
-			} else {
-
-				/* found working mysql server. */
-				info("Plugin %s: Using MySQL server %s\n", PLUGIN_NAME_MYSQL, token_mysql_host);
-
-				/* indicate that we found working mysql server. */
-				found = 1;
-
-				/* found working connection, so break loop. */
-				break;
-			}
-		}
-
-		/* check if we found working mysql server. */
-		if (found == 1) {
-
-			/* found working connection, so break loop. */
-			break;
-		}
-	}
-
-	/* check if no connection was established, very bad :) */
-	if (found == 0) {
+	/* check if mysql connection was successfully established. */
+	if (mysql_real_connect(&mysql, pppd_mysql_host, pppd_mysql_user, pppd_mysql_pass, pppd_mysql_database, (uint32_t)atoi(pppd_mysql_port), (uint8_t *)NULL, 0) == 0) {
 
 		/* something on establishing connection failed. */
-		error("Plugin %s: No working MySQL server found\n", PLUGIN_NAME_MYSQL);
+		pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
 
 		/* close the connection. */
 		mysql_close(&mysql);
@@ -192,9 +146,6 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
 		strncat(query, query_extended, 1023);
 	}
-
-	/* set successful execution value to zero. */
-	found = 0;
 
 	/* loop through number of connection retries. */
 	for (count = pppd_mysql_retry_query; count > 0 ; count--) {

@@ -68,41 +68,6 @@ uint8_t *pppd__strsep(uint8_t **string_p, const uint8_t *delim) {
 	return start;
 }
 
-/* this function removes leading and trailing whitespaces from the given string. */
-uint8_t *pppd__strstrip(uint8_t *string_p) {
-
-	/* some common variables. */
-	size_t size;
-	uint8_t *end;
-
-	/* input length. */
-	size = strlen((char *)string_p);
-
-	/* zero-length string? */
-	if (size == 0) {
-		return string_p;
-	}
-
-	/* end of string. */
-	end = string_p + size - 1;
-
-	/* loop from end and remove whitespaces. */
-	while (end != string_p && isspace(*end)) {
-		end--;
-	}
-
-	/* add null terminator. */
-	*(end + 1) = '\0';
-
-	/* loop from beginning and remove whitespaces. */
-	while (*string_p && isspace(*string_p)) {
-		string_p++;
-	}
-
-	/* return new string. */
-	return string_p;
-}
-
 /* this function convert a given hex value to an integer. */
 int32_t pppd__htoi(uint8_t character) {
 

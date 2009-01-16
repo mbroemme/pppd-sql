@@ -30,11 +30,6 @@ uint8_t *pppd__strsep(
 	const uint8_t	*delim
 );
 
-/* this function removes leading and trailing whitespaces from the given string. */
-uint8_t *pppd__strstrip(
-	uint8_t		*string_p
-);
-
 /* this function convert a given hex value to an integer. */
 int32_t pppd__htoi(
 	uint8_t		character

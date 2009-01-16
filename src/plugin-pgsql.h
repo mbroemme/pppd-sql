@@ -38,6 +38,7 @@ extern uint8_t pppd_version[];
 
 /* global configuration variables. */
 extern uint8_t *pppd_pgsql_host;
+extern uint8_t *pppd_pgsql_port;
 extern uint8_t *pppd_pgsql_user;
 extern uint8_t *pppd_pgsql_pass;
 extern uint8_t *pppd_pgsql_pass_encryption;

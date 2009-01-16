@@ -31,6 +31,7 @@ uint8_t pppd_version[]			= VERSION;
 
 /* global configuration variables. */
 uint8_t *pppd_mysql_host		= NULL;
+uint8_t *pppd_mysql_port		= NULL;
 uint8_t *pppd_mysql_user		= NULL;
 uint8_t *pppd_mysql_pass		= NULL;
 uint8_t *pppd_mysql_pass_encryption	= NULL;
@@ -58,6 +59,7 @@ uint32_t client_ip			= 0;
 /* extra option structure. */
 option_t options[] = {
 	{ "mysql-host", o_string, &pppd_mysql_host, "Set MySQL server host"},
+	{ "mysql-port", o_string, &pppd_mysql_host, "Set MySQL server port"},
 	{ "mysql-user", o_string, &pppd_mysql_user, "Set MySQL username"},
 	{ "mysql-pass", o_string, &pppd_mysql_pass, "Set MySQL password"},
 	{ "mysql-pass-encryption", o_string, &pppd_mysql_pass_encryption, "Set MySQL password encryption algorithm"},

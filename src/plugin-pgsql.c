@@ -31,6 +31,7 @@ uint8_t pppd_version[]			= VERSION;
 
 /* global configuration variables. */
 uint8_t *pppd_pgsql_host		= NULL;
+uint8_t *pppd_pgsql_port		= NULL;
 uint8_t *pppd_pgsql_user		= NULL;
 uint8_t *pppd_pgsql_pass		= NULL;
 uint8_t *pppd_pgsql_pass_encryption	= NULL;
@@ -58,6 +59,7 @@ uint32_t client_ip			= 0;
 /* extra option structure. */
 option_t options[] = {
 	{ "pgsql-host", o_string, &pppd_pgsql_host, "Set PostgreSQL server host"},
+	{ "pgsql-port", o_string, &pppd_pgsql_host, "Set PostgreSQL server port"},
 	{ "pgsql-user", o_string, &pppd_pgsql_user, "Set PostgreSQL username"},
 	{ "pgsql-pass", o_string, &pppd_pgsql_pass, "Set PostgreSQL password"},
 	{ "pgsql-pass-encryption", o_string, &pppd_pgsql_pass_encryption, "Set PostgreSQL password encryption algorithm"},

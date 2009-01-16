@@ -64,9 +64,6 @@ int32_t pppd__pgsql_error(uint8_t *error_message) {
 int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
 
 	/* some common variables. */
-	uint8_t *token_pgsql_uri;
-	uint8_t *token_pgsql_host;
-	uint8_t *token_pgsql_port;
 	uint8_t query[1024];
 	uint8_t query_extended[1024];
 	uint8_t connection_info[1024];
@@ -80,6 +77,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 
 	/* check if all information are supplied. */
 	if (pppd_pgsql_host		== NULL ||
+	    pppd_pgsql_port		== NULL ||
 	    pppd_pgsql_user		== NULL ||
 	    pppd_pgsql_pass		== NULL ||
 	    pppd_pgsql_pass_encryption	== NULL ||
@@ -125,64 +123,20 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		}
 	}
 
-	/* loop through all server tokens. */
-	while ((token_pgsql_uri = pppd__strsep(&pppd_pgsql_host, (unsigned char *)",")) != NULL) {
+	/* clear connection info from previous connection. */
+	memset(connection_info, 0, sizeof(connection_info));
 
-		/* extract host and port. */
-		token_pgsql_host = pppd__strsep(&token_pgsql_uri, (unsigned char *)":");
-		token_pgsql_port = pppd__strsep(&token_pgsql_uri, (unsigned char *)":");
+	/* create the connection information for postgresql. */
+	snprintf((char *)connection_info, 1024, "host='%s' port='%s' user='%s' password='%s' dbname='%s' connect_timeout='%i'", pppd_pgsql_host, pppd_pgsql_port, pppd_pgsql_user, pppd_pgsql_pass, pppd_pgsql_database, pppd_pgsql_connect_timeout);
 
-		/* strip away leading and trailing whitespaces. */
-		token_pgsql_host = pppd__strstrip(token_pgsql_host);
-		token_pgsql_port = pppd__strstrip(token_pgsql_port);
+	/* connect to postgresql database. */
+	pgsql = PQconnectdb((char *)connection_info);
 
-		/* clear connection info from previous connection. */
-		memset(connection_info, 0, sizeof(connection_info));
-
-		/* create the connection information for postgresql. */
-		snprintf((char *)connection_info, 1024, "host='%s' port='%s' user='%s' password='%s' dbname='%s' connect_timeout='%i'", token_pgsql_host, token_pgsql_port, pppd_pgsql_user, pppd_pgsql_pass, pppd_pgsql_database, pppd_pgsql_connect_timeout);
-
-		/* loop through number of connection retries. */
-		for (count = pppd_pgsql_retry_connect; count > 0 ; count--) {
-
-			/* connect to postgresql database. */
-			pgsql = PQconnectdb((char *)connection_info);
-
-			/* check if postgresql connection was successfully established. */
-			if (PQstatus(pgsql) != CONNECTION_OK) {
-
-				/* check if it was last connection try. */
-				if (count == 1) {
-
-					/* something on establishing connection failed. */
-					pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
-				}
-			} else {
-
-				/* found working postgresql server. */
-				info("Plugin %s: Using PostgreSQL server %s\n", PLUGIN_NAME_PGSQL, token_pgsql_host);
-
-				/* indicate that we found working postgresql server. */
-				found = 1;
-
-				/* found working connection, so break loop. */
-				break;
-			}
-		}
-
-		/* check if we found working postgresql server. */
-		if (found == 1) {
-
-			/* found working connection, so break loop. */
-			break;
-		}
-	}
-
-	/* check if no connection was established, very bad :) */
-	if (found == 0) {
+	/* check if postgresql connection was successfully established. */
+	if (PQstatus(pgsql) != CONNECTION_OK) {
 
 		/* something on establishing connection failed. */
-		error("Plugin %s: No working PostgreSQL server found\n", PLUGIN_NAME_PGSQL);
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
 
 		/* close the connection. */
 		PQfinish(pgsql);
@@ -203,9 +157,6 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
 		strncat((char *)query, (char *)query_extended, 1023);
 	}
-
-	/* set successful execution value to zero. */
-	found = 0;
 
 	/* loop through number of connection retries. */
 	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {

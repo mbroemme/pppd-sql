@@ -38,6 +38,7 @@ extern uint8_t pppd_version[];
 
 /* global configuration variables. */
 extern uint8_t *pppd_mysql_host;
+extern uint8_t *pppd_mysql_port;
 extern uint8_t *pppd_mysql_user;
 extern uint8_t *pppd_mysql_pass;
 extern uint8_t *pppd_mysql_pass_encryption;

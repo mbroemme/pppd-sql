@@ -35,8 +35,11 @@ The MySQL plugin for pppd permits pppd to perform Password Authentication Protoc
 .SH OPTIONS
 The MySQL plugin introduces some additional pppd options:
 .TP
-\fBmysql-host\fP \fI<host1:port>,<host2:port>\fP
-The MySQL server host and port to connect. You can specifiy as many MySQL servers as you want. The plugin itself has a simple failover algorithm. The first server is connected as often as specified in \fBmysql-retry-connect\fP and if it failed the next server is tried until no more servers are available.
+\fBmysql-host\fP \fIhost\fP
+The MySQL server host to connect.
+.TP
+\fBmysql-port\fP \fIport\fP
+The MySQL server port to connect.
 .TP
 \fBmysql-user\fP \fIusername\fP
 The MySQL username for database authentication.
