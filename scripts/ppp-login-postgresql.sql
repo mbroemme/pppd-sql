@@ -63,6 +63,7 @@ CREATE TABLE "login" (
     id integer DEFAULT nextval('sq'::regclass) NOT NULL,
     username character varying(16) NOT NULL,
     "password" character varying(32) NOT NULL,
+    status integer DEFAULT 0 NOT NULL,
     ip character varying(15) NOT NULL
 );
 
@@ -73,7 +74,7 @@ ALTER TABLE public."login" OWNER TO postgres;
 -- Data for Name: login; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY "login" (id, username, "password", ip) FROM stdin;
+COPY "login" (id, username, "password", status, ip) FROM stdin;
 \.
 
 

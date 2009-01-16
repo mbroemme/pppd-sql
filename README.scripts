@@ -20,7 +20,8 @@ encoding.
     - Command  = psql -U root -d postgres -f ppp-login-postgresql.sql
 
 The result will be in every case a database with the name 'ppp' and a
-table 'login' with four fields. The first field is an auto increment
-identifier, the second is the username, third is the password and
-fourth field is the ip address which should be assigned after ip
-negotiation.
+table 'login' with five fields. The first field is an auto increment
+identifier, the second is the username, third is the password, fourth
+is the status of the connection (only used if *-update-column and
+*-exclusive option is set) and fifth field is the ip address which
+should be assigned after ip negotiation.

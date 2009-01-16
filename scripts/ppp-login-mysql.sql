@@ -32,6 +32,7 @@ CREATE TABLE `login` (
   `id` int(11) NOT NULL auto_increment,
   `username` varchar(16) NOT NULL,
   `password` varchar(32) NOT NULL,
+  `status` int(11) NOT NULL default '0',
   `ip` varchar(15) NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `username` (`username`)
@@ -55,4 +56,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2008-12-09 19:30:24
+-- Dump completed on 2009-01-16 15:31:38
