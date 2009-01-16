@@ -36,7 +36,7 @@ uint8_t *pppd__strstrip(
 );
 
 /* this function convert a given hex value to an integer. */
-int32_t htoi(
+int32_t pppd__htoi(
 	uint8_t		character
 );
 

@@ -113,7 +113,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
 
 			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 13 byte) */
-			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != passwd_crypt[count]) {
+			if (pppd__htoi(secret_name[2 * count]) * 16 + pppd__htoi(secret_name[2 * count + 1]) != passwd_crypt[count]) {
 
 				/* clear the memory with the hash, so nobody is able to dump it. */
 				memset(passwd_crypt, 0, sizeof(passwd_crypt));
@@ -177,7 +177,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
 
 			/* check if our hex value matches the hash byte. (this isn't the fastest way, but hash is everytime 16 byte) */
-			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != passwd_md5[count]) {
+			if (pppd__htoi(secret_name[2 * count]) * 16 + pppd__htoi(secret_name[2 * count + 1]) != passwd_md5[count]) {
 
 				/* clear the memory with the hash, so nobody is able to dump it. */
 				memset(passwd_md5, 0, sizeof(passwd_md5));
@@ -266,7 +266,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 		for (count = 0; count < (strlen((char *)secret_name) / 2); count++) {
 
 			/* check if our hex value matches the hash byte. (this isn't the fastest way, but okay) */
-			if (htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]) != passwd_aes[count]) {
+			if (pppd__htoi(secret_name[2 * count]) * 16 + pppd__htoi(secret_name[2 * count + 1]) != passwd_aes[count]) {
 
 				/* clear the memory with the aes key and buffer, so nobody is able to dump it. */
 				memset(passwd_aes, 0, sizeof(passwd_aes));
@@ -328,7 +328,7 @@ int32_t pppd__decrypt_password(uint8_t *secret_name, int32_t *secret_length, uin
 		for (count = 0; count < (*secret_length / 2); count++) {
 
 			/* create binary data for decryption. */
-			passwd_aes[count] = htoi(secret_name[2 * count]) * 16 + htoi(secret_name[2 * count + 1]);
+			passwd_aes[count] = pppd__htoi(secret_name[2 * count]) * 16 + pppd__htoi(secret_name[2 * count + 1]);
 		}
 
 		/* initialize the openssl context. */
