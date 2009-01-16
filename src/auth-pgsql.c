@@ -355,7 +355,7 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	int32_t secret_length = 0;
 
 	/* check if postgresql fetching was successful. */
-	if (pppd__pgsql_password(name, secret_name, &secret_length) < 0 &&
+	if (pppd__pgsql_password((uint8_t *)name, secret_name, &secret_length) < 0 &&
 	    pppd_pgsql_authoritative == 1) {
 
 		/* clear the memory with the password, so nobody is able to dump it. */
@@ -388,7 +388,7 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	}
 
 	/* get the secret that the peer is supposed to know. */
-	if (get_secret(0, name, ourname, secret_name, &secret_length, 1) == 0) {
+	if (get_secret(0, name, ourname, (char *)secret_name, &secret_length, 1) == 0) {
 
 		/* clear the memory with the password, so nobody is able to dump it. */
 		memset(secret_name, 0, sizeof(secret_name));
