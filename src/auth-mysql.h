@@ -35,6 +35,9 @@ int32_t pppd__mysql_error(
 	const uint8_t	*error_state
 );
 
+/* this function check the parameter. */
+int32_t pppd__mysql_parameter();
+
 /* this function return the password from database. */
 int32_t pppd__mysql_password(
 	uint8_t		*name,

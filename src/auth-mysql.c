@@ -41,18 +41,8 @@ int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const
 	return 0;
 }
 
-/* this function return the password from database. */
-int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
-
-	/* some common variables. */
-	uint8_t query[1024];
-	uint8_t query_extended[1024];
-	uint32_t count     = 0;
-	uint32_t found     = 0;
-	MYSQL_RES *result  = NULL;
-	MYSQL_ROW row      = NULL;
-	MYSQL_FIELD *field = NULL;
-	MYSQL mysql;
+/* this function check the parameter. */
+int32_t pppd__mysql_parameter() {
 
 	/* check if all information are supplied. */
 	if (pppd_mysql_host		== NULL ||
@@ -101,6 +91,23 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			return PPPD_SQL_ERROR_INCOMPLETE;
 		}
 	}
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
+/* this function return the password from database. */
+int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
+
+	/* some common variables. */
+	uint8_t query[1024];
+	uint8_t query_extended[1024];
+	uint32_t count     = 0;
+	uint32_t found     = 0;
+	MYSQL_RES *result  = NULL;
+	MYSQL_ROW row      = NULL;
+	MYSQL_FIELD *field = NULL;
+	MYSQL mysql;
 
 	/* check if mysql initialization was successful. */
 	if (mysql_init(&mysql) == NULL) {
@@ -294,20 +301,24 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
 
-	/* check if mysql fetching was successful. */
-	if (pppd__mysql_password(name, secret_name, &secret_length) == 0) {
+	/* check if parameters are complete. */
+	if (pppd__mysql_parameter() == 0) {
 
-		/* check if password decryption was correct. */
-		if (pppd__decrypt_password(secret_name, &secret_length, pppd_mysql_pass_encryption, pppd_mysql_pass_key) == 0) {
+		/* check if mysql fetching was successful. */
+		if (pppd__mysql_password(name, secret_name, &secret_length) == 0) {
 
-			/* verify discovered secret against the client's response. */
-			if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
+			/* check if password decryption was correct. */
+			if (pppd__decrypt_password(secret_name, &secret_length, pppd_mysql_pass_encryption, pppd_mysql_pass_key) == 0) {
 
-				/* clear the memory with the password, so nobody is able to dump it. */
-				memset(secret_name, 0, sizeof(secret_name));
+				/* verify discovered secret against the client's response. */
+				if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
 
-				/* if no error was found, establish link. */
-				return 1;
+					/* clear the memory with the password, so nobody is able to dump it. */
+					memset(secret_name, 0, sizeof(secret_name));
+
+					/* if no error was found, establish link. */
+					return 1;
+				}
 			}
 		}
 	}
@@ -347,17 +358,21 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
 
-	/* check if mysql fetching was successful. */
-	if (pppd__mysql_password(user, secret_name, &secret_length) == 0) {
+	/* check if parameters are complete. */
+	if (pppd__mysql_parameter() == 0) {
 
-		/* check if the password is correct. */
-		if (pppd__verify_password(passwd, secret_name, pppd_mysql_pass_encryption, pppd_mysql_pass_key) == 0) {
+		/* check if mysql fetching was successful. */
+		if (pppd__mysql_password(user, secret_name, &secret_length) == 0) {
 
-			/* clear the memory with the password, so nobody is able to dump it. */
-			memset(secret_name, 0, sizeof(secret_name));
+			/* check if the password is correct. */
+			if (pppd__verify_password(passwd, secret_name, pppd_mysql_pass_encryption, pppd_mysql_pass_key) == 0) {
 
-			/* if no error was found, establish link. */
-			return 1;
+				/* clear the memory with the password, so nobody is able to dump it. */
+				memset(secret_name, 0, sizeof(secret_name));
+
+				/* if no error was found, establish link. */
+				return 1;
+			}
 		}
 	}
 

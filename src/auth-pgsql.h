@@ -33,6 +33,9 @@ int32_t pppd__pgsql_error(
 	uint8_t		*error_message
 );
 
+/* this function check the parameter. */
+int32_t pppd__pgsql_parameter();
+
 /* this function return the password from database. */
 int32_t pppd__pgsql_password(
 	uint8_t		*name,
