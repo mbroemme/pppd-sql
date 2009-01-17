@@ -34,10 +34,23 @@ int32_t pppd__pgsql_error(
 );
 
 /* this function check the parameter. */
-int32_t pppd__pgsql_parameter();
+int32_t pppd__pgsql_parameter(
+	void
+);
+
+/* this function connect to a postgresql database. */
+int32_t pppd__pgsql_connect(
+	PGconn		**pgsql
+);
+
+/* this function disconnect from a postgresql database. */
+int32_t pppd__pgsql_disconnect(
+	PGconn		**pgsql
+);
 
 /* this function return the password from database. */
 int32_t pppd__pgsql_password(
+	PGconn		**pgsql,
 	uint8_t		*name,
 	uint8_t		*secret_name,
 	int32_t		*secret_length

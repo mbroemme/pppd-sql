@@ -61,7 +61,7 @@ int32_t pppd__pgsql_error(uint8_t *error_message) {
 }
 
 /* this function check the parameter. */
-int32_t pppd__pgsql_parameter() {
+int32_t pppd__pgsql_parameter(void) {
 
 	/* check if all information are supplied. */
 	if (pppd_pgsql_host		== NULL ||
@@ -115,20 +115,12 @@ int32_t pppd__pgsql_parameter() {
 	return 0;
 }
 
-/* this function return the password from database. */
-int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
+/* this function connect to a postgresql database. */
+int32_t pppd__pgsql_connect(PGconn **pgsql) {
 
 	/* some common variables. */
-	uint8_t query[1024];
-	uint8_t query_extended[1024];
 	uint8_t connection_info[1024];
-	int32_t is_null  = 0;
-	uint32_t count   = 0;
-	uint32_t found   = 0;
-	uint8_t *row     = 0;
-	uint8_t *field   = NULL;
-	PGresult *result = NULL;
-	PGconn *pgsql    = NULL;
+	uint32_t count = 0;
 
 	/* clear connection info from previous connection. */
 	memset(connection_info, 0, sizeof(connection_info));
@@ -140,19 +132,19 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 	for (count = pppd_pgsql_retry_connect; count > 0 ; count--) {
 
 		/* connect to postgresql database. */
-		pgsql = PQconnectdb((char *)connection_info);
+		*pgsql = PQconnectdb((char *)connection_info);
 
 		/* check if postgresql connection was successfully established. */
-		if (PQstatus(pgsql) != CONNECTION_OK) {
+		if (PQstatus(*pgsql) != CONNECTION_OK) {
 
 			/* check if it was last connection try. */
 			if (count == 1) {
 
 				/* something on establishing connection failed. */
-				pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+				pppd__pgsql_error((uint8_t *)PQerrorMessage(*pgsql));
 
 				/* close the connection. */
-				PQfinish(pgsql);
+				PQfinish(*pgsql);
 
 				/* return with error and terminate link. */
 				return PPPD_SQL_ERROR_CONNECT;
@@ -163,6 +155,37 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			break;
 		}
 	}
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
+/* this function disconnect from a postgresql database. */
+int32_t pppd__pgsql_disconnect(PGconn **pgsql) {
+
+	/* check if pgsql is allocated. */
+	if (*pgsql != NULL) {
+
+		/* close the connection. */
+		PQfinish(*pgsql);
+	}
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
+/* this function return the password from database. */
+int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
+
+	/* some common variables. */
+	uint8_t query[1024];
+	uint8_t query_extended[1024];
+	int32_t is_null  = 0;
+	uint32_t count   = 0;
+	uint32_t found   = 0;
+	uint8_t *row     = 0;
+	uint8_t *field   = NULL;
+	PGresult *result = NULL;
 
 	/* build query for database. */
 	snprintf((char *)query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_pgsql_column_pass, pppd_pgsql_column_ip, pppd_pgsql_table, pppd_pgsql_column_user, name);
@@ -181,7 +204,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
 
 		/* check if query was successfully executed. */
-		if ((result = PQexec(pgsql, (char *)query)) != NULL) {
+		if ((result = PQexec(*pgsql, (char *)query)) != NULL) {
 
 			/* indicate that we fetch a result. */
 			found = 1;
@@ -198,10 +221,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 	if (found == 0) {
 
 		/* something on executing query failed. */
-		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
-
-		/* close the connection. */
-		PQfinish(pgsql);
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(*pgsql));
 
 		/* return with error and terminate link. */
 		return PPPD_SQL_ERROR_QUERY;
@@ -211,13 +231,10 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 	if (PQnfields(result) == 0) {
 
 		/* something on executing query failed. */
-		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(*pgsql));
 
 		/* clear memory to avoid leaks. */
 		PQclear(result);
-
-		/* close the connection. */
-		PQfinish(pgsql);
 
 		/* return with error and terminate link. */
 		return PPPD_SQL_ERROR_QUERY;
@@ -231,9 +248,6 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 
 		/* clear memory to avoid leaks. */
 		PQclear(result);
-
-		/* close the connection. */
-		PQfinish(pgsql);
 
 		/* return with error and terminate link. */
 		return PPPD_SQL_ERROR_QUERY;
@@ -268,9 +282,6 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 			/* clear memory to avoid leaks. */
 			PQclear(result);
 
-			/* close the connection. */
-			PQfinish(pgsql);
-
 			/* return with error and terminate link. */
 			return PPPD_SQL_ERROR_QUERY;
 		}
@@ -298,9 +309,6 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 				/* clear memory to avoid leaks. */
 				PQclear(result);
 
-				/* close the connection. */
-				PQfinish(pgsql);
-
 				/* return with error and terminate link. */
 				return PPPD_SQL_ERROR_QUERY;
 			}
@@ -309,9 +317,6 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 
 	/* clear memory to avoid leaks. */
 	PQclear(result);
-
-	/* close the connection. */
-	PQfinish(pgsql);
 
 	/* if no error was found, return zero. */
 	return 0;
@@ -323,28 +328,39 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
+	PGconn *pgsql;
 
 	/* check if parameters are complete. */
 	if (pppd__pgsql_parameter() == 0) {
 
-		/* check if postgresql fetching was successful. */
-		if (pppd__pgsql_password((uint8_t *)name, secret_name, &secret_length) == 0) {
+		/* check if postgresql connect is working. */
+		if (pppd__pgsql_connect(&pgsql) == 0) {
 
-			/* check if password decryption was correct. */
-			if (pppd__decrypt_password(secret_name, &secret_length, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
+			/* check if postgresql fetching was successful. */
+			if (pppd__pgsql_password(&pgsql, (uint8_t *)name, secret_name, &secret_length) == 0) {
 
-				/* verify discovered secret against the client's response. */
-				if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
+				/* check if password decryption was correct. */
+				if (pppd__decrypt_password(secret_name, &secret_length, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
 
-					/* clear the memory with the password, so nobody is able to dump it. */
-					memset(secret_name, 0, sizeof(secret_name));
+					/* verify discovered secret against the client's response. */
+					if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
 
-					/* if no error was found, establish link. */
-					return 1;
+						/* disconnect from postgresql. */
+						pppd__pgsql_disconnect(&pgsql);
+
+						/* clear the memory with the password, so nobody is able to dump it. */
+						memset(secret_name, 0, sizeof(secret_name));
+
+						/* if no error was found, establish link. */
+						return 1;
+					}
 				}
 			}
 		}
 	}
+
+	/* disconnect from postgresql. */
+	pppd__pgsql_disconnect(&pgsql);
 
 	/* check if postgresql is not authoritative. */
 	if (pppd_pgsql_authoritative == 0) {
@@ -380,24 +396,35 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
+	PGconn *pgsql;
 
 	/* check if parameters are complete. */
 	if (pppd__pgsql_parameter() == 0) {
 
-		/* check if postgresql fetching was successful. */
-		if (pppd__pgsql_password((uint8_t *)user, secret_name, &secret_length) == 0) {
+		/* check if postgresql connect is working. */
+		if (pppd__pgsql_connect(&pgsql) == 0) {
 
-			/* check if the password is correct. */
-			if (pppd__verify_password((uint8_t *)passwd, secret_name, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
+			/* check if postgresql fetching was successful. */
+			if (pppd__pgsql_password(&pgsql, (uint8_t *)user, secret_name, &secret_length) == 0) {
 
-				/* clear the memory with the password, so nobody is able to dump it. */
-				memset(secret_name, 0, sizeof(secret_name));
+				/* check if the password is correct. */
+				if (pppd__verify_password((uint8_t *)passwd, secret_name, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
 
-				/* if no error was found, establish link. */
-				return 1;
+					/* disconnect from postgresql. */
+					pppd__pgsql_disconnect(&pgsql);
+
+					/* clear the memory with the password, so nobody is able to dump it. */
+					memset(secret_name, 0, sizeof(secret_name));
+
+					/* if no error was found, establish link. */
+					return 1;
+				}
 			}
 		}
 	}
+
+	/* disconnect from postgresql. */
+	pppd__pgsql_disconnect(&pgsql);
 
 	/* check if postgresql is not authoritative. */
 	if (pppd_pgsql_authoritative == 0) {

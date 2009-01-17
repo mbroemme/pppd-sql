@@ -36,10 +36,23 @@ int32_t pppd__mysql_error(
 );
 
 /* this function check the parameter. */
-int32_t pppd__mysql_parameter();
+int32_t pppd__mysql_parameter(
+	void
+);
+
+/* this function connect to a mysql database. */
+int32_t pppd__mysql_connect(
+	MYSQL		*mysql
+);
+
+/* this function disconnect from a mysql database. */
+int32_t pppd__mysql_disconnect(
+	MYSQL		*mysql
+);
 
 /* this function return the password from database. */
 int32_t pppd__mysql_password(
+	MYSQL		*mysql,
 	uint8_t		*name,
 	uint8_t		*secret_name,
 	int32_t		*secret_length
