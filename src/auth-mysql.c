@@ -139,6 +139,10 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 				/* return with error and terminate link. */
 				return PPPD_SQL_ERROR_CONNECT;
 			}
+		} else {
+
+			/* connection is working. */
+			break;
 		}
 	}
 
