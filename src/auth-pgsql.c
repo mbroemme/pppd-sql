@@ -314,66 +314,46 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	int32_t secret_length = 0;
 
 	/* check if postgresql fetching was successful. */
-	if (pppd__pgsql_password((uint8_t *)name, secret_name, &secret_length) < 0 &&
-	    pppd_pgsql_authoritative == 1) {
+	if (pppd__pgsql_password((uint8_t *)name, secret_name, &secret_length) == 0) {
 
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
+		/* check if password decryption was correct. */
+		if (pppd__decrypt_password(secret_name, &secret_length, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
 
-		/* return with error and terminate link. */
-		return 0;
+			/* verify discovered secret against the client's response. */
+			if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
+
+				/* clear the memory with the password, so nobody is able to dump it. */
+				memset(secret_name, 0, sizeof(secret_name));
+
+				/* if no error was found, establish link. */
+				return 1;
+			}
+		}
 	}
 
-	/* check if password decryption was correct. */
-	if (pppd__decrypt_password(secret_name, &secret_length, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) < 0 &&
-	    pppd_pgsql_authoritative == 1) {
+	/* check if postgresql is not authoritative. */
+	if (pppd_pgsql_authoritative == 0) {
 
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
+		/* get the secret that the peer is supposed to know. */
+		if (get_secret(0, name, ourname, (char *)secret_name, &secret_length, 1) == 1) {
 
-		/* return with error and terminate link. */
-		return 0;
-	}
+			/* verify discovered secret against the client's response. */
+			if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
 
-	/* verify discovered secret against the client's response. */
-	if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) != 1 &&
-	    pppd_pgsql_authoritative == 1) {
+				/* clear the memory with the password, so nobody is able to dump it. */
+				memset(secret_name, 0, sizeof(secret_name));
 
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
-
-		/* return with error and terminate link. */
-		return 0;
-	}
-
-	/* get the secret that the peer is supposed to know. */
-	if (get_secret(0, name, ourname, (char *)secret_name, &secret_length, 1) == 0) {
-
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
-
-		/* show user that fallback also fails. */
-		error("No CHAP secret found for authenticating %q", name);
-
-		/* return with error and terminate link. */
-		return 0;
-	}
-
-	/* verify discovered secret against the client's response. */
-	if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) != 1) {
-
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
-
-		/* return with error and terminate link. */
-		return 0;
+				/* if no error was found, establish link. */
+				return 1;
+			}
+		}
 	}
 
 	/* clear the memory with the password, so nobody is able to dump it. */
 	memset(secret_name, 0, sizeof(secret_name));
 
-	/* if no error was found, establish link. */
-	return 1;
+	/* return with error and terminate link. */
+	return 0;
 }
 
 /* this function check the pap authentication information against a postgresql database. */
