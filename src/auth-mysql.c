@@ -121,17 +121,25 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		return PPPD_SQL_ERROR_OPTION;
 	}
 
-	/* check if mysql connection was successfully established. */
-	if (mysql_real_connect(&mysql, pppd_mysql_host, pppd_mysql_user, pppd_mysql_pass, pppd_mysql_database, (uint32_t)atoi(pppd_mysql_port), (uint8_t *)NULL, 0) == 0) {
+	/* loop through number of connection retries. */
+	for (count = pppd_mysql_retry_connect; count > 0 ; count--) {
 
-		/* something on establishing connection failed. */
-		pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
+		/* check if mysql connection was successfully established. */
+		if (mysql_real_connect(&mysql, pppd_mysql_host, pppd_mysql_user, pppd_mysql_pass, pppd_mysql_database, (uint32_t)atoi(pppd_mysql_port), (uint8_t *)NULL, 0) == 0) {
 
-		/* close the connection. */
-		mysql_close(&mysql);
+			/* check if it was last connection try. */
+			if (count == 1) {
 
-		/* return with error and terminate link. */
-		return PPPD_SQL_ERROR_CONNECT;
+				/* something on establishing connection failed. */
+				pppd__mysql_error(mysql_errno(&mysql), mysql_sqlstate(&mysql), mysql_error(&mysql));
+
+				/* close the connection. */
+				mysql_close(&mysql);
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_CONNECT;
+			}
+		}
 	}
 
 	/* build query for database. */
@@ -147,7 +155,7 @@ int32_t pppd__mysql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		strncat(query, query_extended, 1023);
 	}
 
-	/* loop through number of connection retries. */
+	/* loop through number of query retries. */
 	for (count = pppd_mysql_retry_query; count > 0 ; count--) {
 
 		/* check if query was successfully executed. */

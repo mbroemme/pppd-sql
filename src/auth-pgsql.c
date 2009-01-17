@@ -129,20 +129,28 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 	/* create the connection information for postgresql. */
 	snprintf((char *)connection_info, 1024, "host='%s' port='%s' user='%s' password='%s' dbname='%s' connect_timeout='%i'", pppd_pgsql_host, pppd_pgsql_port, pppd_pgsql_user, pppd_pgsql_pass, pppd_pgsql_database, pppd_pgsql_connect_timeout);
 
-	/* connect to postgresql database. */
-	pgsql = PQconnectdb((char *)connection_info);
+	/* loop through number of connection retries. */
+	for (count = pppd_pgsql_retry_connect; count > 0 ; count--) {
 
-	/* check if postgresql connection was successfully established. */
-	if (PQstatus(pgsql) != CONNECTION_OK) {
+		/* connect to postgresql database. */
+		pgsql = PQconnectdb((char *)connection_info);
 
-		/* something on establishing connection failed. */
-		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+		/* check if postgresql connection was successfully established. */
+		if (PQstatus(pgsql) != CONNECTION_OK) {
 
-		/* close the connection. */
-		PQfinish(pgsql);
+			/* check if it was last connection try. */
+			if (count == 1) {
 
-		/* return with error and terminate link. */
-		return PPPD_SQL_ERROR_CONNECT;
+				/* something on establishing connection failed. */
+				pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+
+				/* close the connection. */
+				PQfinish(pgsql);
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_CONNECT;
+			}
+		}
 	}
 
 	/* build query for database. */
@@ -158,7 +166,7 @@ int32_t pppd__pgsql_password(uint8_t *name, uint8_t *secret_name, int32_t *secre
 		strncat((char *)query, (char *)query_extended, 1023);
 	}
 
-	/* loop through number of connection retries. */
+	/* loop through number of query retries. */
 	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
 
 		/* check if query was successfully executed. */
