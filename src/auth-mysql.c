@@ -326,6 +326,9 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 		}
 	}
 
+	/* show user that fallback also fails. */
+	error("No CHAP secret found for authenticating %q", name);
+
 	/* clear the memory with the password, so nobody is able to dump it. */
 	memset(secret_name, 0, sizeof(secret_name));
 
@@ -341,44 +344,29 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 	int32_t secret_length = 0;
 
 	/* check if mysql fetching was successful. */
-	if (pppd__mysql_password(user, secret_name, &secret_length) < 0) {
+	if (pppd__mysql_password(user, secret_name, &secret_length) == 0) {
 
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
+		/* check if the password is correct. */
+		if (pppd__verify_password(passwd, secret_name, pppd_mysql_pass_encryption, pppd_mysql_pass_key) == 0) {
 
-		/* check if mysql is authoritative. */
-		if (pppd_mysql_authoritative == 1) {
+			/* clear the memory with the password, so nobody is able to dump it. */
+			memset(secret_name, 0, sizeof(secret_name));
 
-			/* return with error and terminate link. */
-			return 0;
-		} else {
-
-			/* return with error and terminate link. */
-			return -1;
+			/* if no error was found, establish link. */
+			return 1;
 		}
 	}
 
-	/* check if the password is correct. */
-	if (pppd__verify_password(passwd, secret_name, pppd_mysql_pass_encryption, pppd_mysql_pass_key) < 0) {
+	/* check if mysql is not authoritative. */
+	if (pppd_mysql_authoritative == 0) {
 
-		/* clear the memory with the password, so nobody is able to dump it. */
-		memset(secret_name, 0, sizeof(secret_name));
-
-		/* check if mysql is authoritative. */
-		if (pppd_mysql_authoritative == 1) {
-
-			/* return with error and terminate link. */
-			return 0;
-		} else {
-
-			/* return with error and terminate link. */
-			return -1;
-		}
+		/* return with error and look in pap file. */
+		return -1;
 	}
 
 	/* clear the memory with the password, so nobody is able to dump it. */
 	memset(secret_name, 0, sizeof(secret_name));
 
-	/* if no error was found, establish link. */
-	return 1;
+	/* return with error and terminate link. */
+	return 0;
 }
