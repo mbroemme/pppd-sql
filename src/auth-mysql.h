@@ -58,6 +58,13 @@ int32_t pppd__mysql_password(
 	int32_t		*secret_length
 );
 
+/* this function update the login status in database. */
+int32_t pppd__mysql_status(
+	MYSQL		*mysql,
+	uint8_t		*name,
+	uint32_t	status
+);
+
 /* this function check the chap authentication information against a mysql database. */
 int32_t pppd__chap_verify_mysql(
 	char		*name,

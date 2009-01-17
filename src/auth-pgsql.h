@@ -56,6 +56,13 @@ int32_t pppd__pgsql_password(
 	int32_t		*secret_length
 );
 
+/* this function update the login status in database. */
+int32_t pppd__pgsql_status(
+	PGconn		**pgsql,
+	uint8_t		*name,
+	uint32_t	status
+);
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(
 	char		*name,

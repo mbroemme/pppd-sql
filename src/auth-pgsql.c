@@ -322,6 +322,56 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 	return 0;
 }
 
+/* this function update the login status in database. */
+int32_t pppd__pgsql_status(PGconn **pgsql, uint8_t *name, uint32_t status) {
+
+	/* some common variables. */
+	uint8_t query[1024];
+	uint32_t count = 0;
+	uint32_t found = 0;
+	PGresult *result = NULL;
+
+	/* build query for database. */
+	snprintf((char *)query, 1024, "UPDATE %s SET %s='%d' WHERE %s='%s'", pppd_pgsql_table, pppd_pgsql_column_update, status, pppd_pgsql_column_user, name);
+
+	/* loop through number of query retries. */
+	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
+
+		/* check if query was successfully executed. */
+		if ((result = PQexec(*pgsql, (char *)query)) != NULL) {
+
+			/* check if the result is okay. */
+			if (PQresultStatus(result) == PGRES_COMMAND_OK) {
+
+				/* indicate that we fetch a result. */
+				found = 1;
+
+				/* query result was ok, so break loop. */
+				break;
+			}
+		}
+
+		/* clear memory to avoid leaks. */
+		PQclear(result);
+	}
+
+	/* check if no query was executed successfully, very bad :) */
+	if (found == 0) {
+
+		/* something on executing query failed. */
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(*pgsql));
+
+		/* return with error and terminate link. */
+		return PPPD_SQL_ERROR_QUERY;
+	}
+
+	/* clear memory to avoid leaks. */
+	PQclear(result);
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
 
@@ -345,14 +395,18 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 					/* verify discovered secret against the client's response. */
 					if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
 
-						/* disconnect from postgresql. */
-						pppd__pgsql_disconnect(&pgsql);
+						/* check if database update was successful. */
+						if (pppd__pgsql_status(&pgsql, (uint8_t *)name, 1) == 0) {
 
-						/* clear the memory with the password, so nobody is able to dump it. */
-						memset(secret_name, 0, sizeof(secret_name));
+							/* disconnect from postgresql. */
+							pppd__pgsql_disconnect(&pgsql);
 
-						/* if no error was found, establish link. */
-						return 1;
+							/* clear the memory with the password, so nobody is able to dump it. */
+							memset(secret_name, 0, sizeof(secret_name));
+
+							/* if no error was found, establish link. */
+							return 1;
+						}
 					}
 				}
 			}
@@ -410,14 +464,18 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 				/* check if the password is correct. */
 				if (pppd__verify_password((uint8_t *)passwd, secret_name, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
 
-					/* disconnect from postgresql. */
-					pppd__pgsql_disconnect(&pgsql);
+					/* check if database update was successful. */
+					if (pppd__pgsql_status(&pgsql, (uint8_t *)user, 1) == 0) {
 
-					/* clear the memory with the password, so nobody is able to dump it. */
-					memset(secret_name, 0, sizeof(secret_name));
+						/* disconnect from postgresql. */
+						pppd__pgsql_disconnect(&pgsql);
 
-					/* if no error was found, establish link. */
-					return 1;
+						/* clear the memory with the password, so nobody is able to dump it. */
+						memset(secret_name, 0, sizeof(secret_name));
+
+						/* if no error was found, establish link. */
+						return 1;
+					}
 				}
 			}
 		}
