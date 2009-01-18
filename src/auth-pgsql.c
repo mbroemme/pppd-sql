@@ -28,6 +28,9 @@
 /* auth plugin includes. */
 #include "auth-pgsql.h"
 
+/* store username in global variable, because ip down did not know it. */
+uint8_t username[MAXNAMELEN];
+
 /* this function handles the PQerrorMessage() result. */
 int32_t pppd__pgsql_error(uint8_t *error_message) {
 
@@ -376,6 +379,23 @@ int32_t pppd__pgsql_status(PGconn **pgsql, uint8_t *name, uint32_t status) {
 	return 0;
 }
 
+/* this function is the ip down notifier for the ppp daemon. */
+void pppd__pgsql_down(void *opaque, int32_t arg) {
+
+	/* some common variables. */
+	PGconn *pgsql = NULL;
+
+	/* check if postgresql connect is working. */
+	if (pppd__pgsql_connect(&pgsql) == 0) {
+
+		/* update database. */
+		pppd__pgsql_status(&pgsql, username, 0);
+
+		/* disconnect from postgresql. */
+		pppd__pgsql_disconnect(&pgsql);
+	}
+}
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
 
@@ -402,6 +422,9 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 						/* check if database update was successful. */
 						if (pppd__pgsql_status(&pgsql, (uint8_t *)name, 1) == 0) {
 
+							/* store username for ip down configuration. */
+							strncpy((char *)username, name, MAXNAMELEN);
+
 							/* disconnect from postgresql. */
 							pppd__pgsql_disconnect(&pgsql);
 
@@ -414,11 +437,11 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 					}
 				}
 			}
+
+			/* disconnect from postgresql. */
+			pppd__pgsql_disconnect(&pgsql);
 		}
 	}
-
-	/* disconnect from postgresql. */
-	pppd__pgsql_disconnect(&pgsql);
 
 	/* check if postgresql is not authoritative. */
 	if (pppd_pgsql_authoritative == 0) {
@@ -471,6 +494,9 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 					/* check if database update was successful. */
 					if (pppd__pgsql_status(&pgsql, (uint8_t *)user, 1) == 0) {
 
+						/* store username for ip down configuration. */
+						strncpy((char *)username, user, MAXNAMELEN);
+
 						/* disconnect from postgresql. */
 						pppd__pgsql_disconnect(&pgsql);
 
@@ -482,11 +508,11 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 					}
 				}
 			}
+
+			/* disconnect from postgresql. */
+			pppd__pgsql_disconnect(&pgsql);
 		}
 	}
-
-	/* disconnect from postgresql. */
-	pppd__pgsql_disconnect(&pgsql);
 
 	/* check if postgresql is not authoritative. */
 	if (pppd_pgsql_authoritative == 0) {

@@ -99,6 +99,9 @@ void plugin_init(void) {
 	ip_choose_hook		= pppd__ip_choose;
 	allowed_address_hook	= pppd__allowed_address;
 
+	/* add ip down notifier. */
+	add_notifier(&ip_down_notifier, pppd__mysql_down, NULL);
+
 	/* point extra options to our array. */
 	add_options(options);
 }

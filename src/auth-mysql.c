@@ -28,6 +28,9 @@
 /* auth plugin includes. */
 #include "auth-mysql.h"
 
+/* store username in global variable, because ip down did not know it. */
+uint8_t username[MAXNAMELEN];
+
 /* this function handles the mysql_error() result. */
 int32_t pppd__mysql_error(uint32_t error_code, const uint8_t *error_state, const uint8_t *error_message) {
 
@@ -339,6 +342,23 @@ int32_t pppd__mysql_status(MYSQL **mysql, uint8_t *name, uint32_t status) {
 	return 0;
 }
 
+/* this function is the ip down notifier for the ppp daemon. */
+void pppd__mysql_down(void *opaque, int32_t arg) {
+
+	/* some common variables. */
+	MYSQL *mysql = NULL;
+
+	/* check if mysql connect is working. */
+	if (pppd__mysql_connect(&mysql) == 0) {
+
+		/* update database. */
+		pppd__mysql_status(&mysql, username, 0);
+
+		/* disconnect from mysql. */
+		pppd__mysql_disconnect(&mysql);
+	}
+}
+
 /* this function check the chap authentication information against a mysql database. */
 int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_digest_type *digest, unsigned char *challenge, unsigned char *response, char *message, int message_space) {
 
@@ -365,6 +385,9 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 						/* check if database update was successful. */
 						if (pppd__mysql_status(&mysql, name, 1) == 0) {
 
+							/* store username for ip down configuration. */
+							strncpy(username, name, MAXNAMELEN);
+
 							/* disconnect from mysql. */
 							pppd__mysql_disconnect(&mysql);
 
@@ -377,11 +400,11 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 					}
 				}
 			}
+
+			/* disconnect from mysql. */
+			pppd__mysql_disconnect(&mysql);
 		}
 	}
-
-	/* disconnect from mysql. */
-	pppd__mysql_disconnect(&mysql);
 
 	/* check if mysql is not authoritative. */
 	if (pppd_mysql_authoritative == 0) {
@@ -434,6 +457,9 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 					/* check if database update was successful. */
 					if (pppd__mysql_status(&mysql, user, 1) == 0) {
 
+						/* store username for ip down configuration. */
+						strncpy(username, user, MAXNAMELEN);
+
 						/* disconnect from mysql. */
 						pppd__mysql_disconnect(&mysql);
 
@@ -445,11 +471,11 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 					}
 				}
 			}
+
+			/* disconnect from mysql. */
+			pppd__mysql_disconnect(&mysql);
 		}
 	}
-
-	/* disconnect from mysql. */
-	pppd__mysql_disconnect(&mysql);
 
 	/* check if mysql is not authoritative. */
 	if (pppd_mysql_authoritative == 0) {

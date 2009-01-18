@@ -63,6 +63,12 @@ int32_t pppd__pgsql_status(
 	uint32_t	status
 );
 
+/* this function is the ip down notifier for the ppp daemon. */
+void pppd__pgsql_down(
+	void		*opaque,
+	int32_t		arg
+);
+
 /* this function check the chap authentication information against a postgresql database. */
 int32_t pppd__chap_verify_pgsql(
 	char		*name,
