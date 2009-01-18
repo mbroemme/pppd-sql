@@ -89,7 +89,7 @@ The PostgreSQL column which should be updated after authentication and ip negoti
 This is an extra PostgreSQL condition, if you need to join additional tables for username verification.
 .TP
 \fBpgsql-exclusive\fP
-If this option is set, the plugin will forbid concurrent connections from the same user. The plugin itself don't know anything about a second connection so this information is stored in database. It is required to set \fBpgsql-column-update\fP to a value in \fBpgsql-table\fP which can be updated. (Default: not set)
+If this option is set, the plugin will forbid concurrent connections from the same user. The plugin itself don't know anything about a second connection so this information is stored in database. It is required to set \fBpgsql-column-update\fP to a value in \fBpgsql-table\fP which can be updated and \fBpgsql-authoritative\fP (see below) must be used. (Default: not set)
 .TP
 \fBpgsql-authoritative\fP
 If this option is set, the plugin will authenticate only against the database and if it fails the link will be terminated. If this option is not set, the plugin will fallback on authentication failure to usual \fI/etc/ppp/pap-secrets\fP and \fI/etc/ppp/chap-secrets\fP files. (Default: not set)

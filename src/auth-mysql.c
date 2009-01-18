@@ -82,7 +82,8 @@ int32_t pppd__mysql_parameter(void) {
 	if (pppd_mysql_exclusive == 1) {
 
 		/* check if update column is given. */
-		if (pppd_mysql_column_update == NULL) {
+		if (pppd_mysql_column_update == NULL ||
+		    pppd_mysql_authoritative == 0) {
 
 			/* some required exclusive information are missing. */
 			error("Plugin: %s: MySQL exclusive information are not complete\n", PLUGIN_NAME_MYSQL);
@@ -97,13 +98,13 @@ int32_t pppd__mysql_parameter(void) {
 }
 
 /* this function connect to a mysql database. */
-int32_t pppd__mysql_connect(MYSQL *mysql) {
+int32_t pppd__mysql_connect(MYSQL **mysql) {
 
 	/* some common variables. */
 	uint32_t count = 0;
 
 	/* check if mysql initialization was successful. */
-	if (mysql_init(mysql) == NULL) {
+	if ((*mysql = mysql_init(NULL)) == NULL) {
 
 		/* something failed on mysql initialization. */
 		error("Plugin %s: MySQL initialization failed\n", PLUGIN_NAME_MYSQL);
@@ -113,7 +114,7 @@ int32_t pppd__mysql_connect(MYSQL *mysql) {
 	}
 
 	/* set mysql connect timeout. */
-	if (mysql_options(mysql, MYSQL_OPT_CONNECT_TIMEOUT, (uint8_t *)&pppd_mysql_connect_timeout) != 0) {
+	if (mysql_options(*mysql, MYSQL_OPT_CONNECT_TIMEOUT, (uint8_t *)&pppd_mysql_connect_timeout) != 0) {
 
 		info("Plugin %s: MySQL options are unknown\n", PLUGIN_NAME_MYSQL);
 
@@ -125,16 +126,16 @@ int32_t pppd__mysql_connect(MYSQL *mysql) {
 	for (count = pppd_mysql_retry_connect; count > 0 ; count--) {
 
 		/* check if mysql connection was successfully established. */
-		if (mysql_real_connect(mysql, pppd_mysql_host, pppd_mysql_user, pppd_mysql_pass, pppd_mysql_database, (uint32_t)atoi(pppd_mysql_port), (uint8_t *)NULL, 0) == 0) {
+		if (mysql_real_connect(*mysql, pppd_mysql_host, pppd_mysql_user, pppd_mysql_pass, pppd_mysql_database, (uint32_t)atoi(pppd_mysql_port), (uint8_t *)NULL, 0) == 0) {
 
 			/* check if it was last connection try. */
 			if (count == 1) {
 
 				/* something on establishing connection failed. */
-				pppd__mysql_error(mysql_errno(mysql), mysql_sqlstate(mysql), mysql_error(mysql));
+				pppd__mysql_error(mysql_errno(*mysql), mysql_sqlstate(*mysql), mysql_error(*mysql));
 
 				/* close the connection. */
-				mysql_close(mysql);
+				mysql_close(*mysql);
 
 				/* return with error and terminate link. */
 				return PPPD_SQL_ERROR_CONNECT;
@@ -151,13 +152,13 @@ int32_t pppd__mysql_connect(MYSQL *mysql) {
 }
 
 /* this function disconnect from a mysql database. */
-int32_t pppd__mysql_disconnect(MYSQL *mysql) {
+int32_t pppd__mysql_disconnect(MYSQL **mysql) {
 
 	/* check if mysql is allocated. */
-	if (mysql != NULL) {
+	if (*mysql != NULL) {
 
 		/* close the connection. */
-		mysql_close(mysql);
+		mysql_close(*mysql);
 	}
 
 	/* if no error was found, return zero. */
@@ -165,7 +166,7 @@ int32_t pppd__mysql_disconnect(MYSQL *mysql) {
 }
 
 /* this function return the password from database. */
-int32_t pppd__mysql_password(MYSQL *mysql, uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
+int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name, int32_t *secret_length) {
 
 	/* some common variables. */
 	uint8_t query[1024];
@@ -187,13 +188,16 @@ int32_t pppd__mysql_password(MYSQL *mysql, uint8_t *name, uint8_t *secret_name, 
 
 		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
 		strncat(query, query_extended, 1023);
+
+		/* clear the memory with the extended query, to build next one if required. */
+		memset(query_extended, 0, sizeof(query_extended));
 	}
 
 	/* loop through number of query retries. */
 	for (count = pppd_mysql_retry_query; count > 0 ; count--) {
 
 		/* check if query was successfully executed. */
-		if (mysql_query(mysql, query) == 0) {
+		if (mysql_query(*mysql, query) == 0) {
 
 			/* indicate that we fetch a result. */
 			found = 1;
@@ -207,20 +211,20 @@ int32_t pppd__mysql_password(MYSQL *mysql, uint8_t *name, uint8_t *secret_name, 
 	if (found == 0) {
 
 		/* something on executing query failed. */
-		pppd__mysql_error(mysql_errno(mysql), mysql_sqlstate(mysql), mysql_error(mysql));
+		pppd__mysql_error(mysql_errno(*mysql), mysql_sqlstate(*mysql), mysql_error(*mysql));
 
 		/* return with error and terminate link. */
 		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* check if mysql result was successfully stored. */
-	if ((result = mysql_store_result(mysql)) == NULL) {
+	if ((result = mysql_store_result(*mysql)) == NULL) {
 
 		/* check if mysql should return data. */
-		if (mysql_field_count(mysql) == 0) {
+		if (mysql_field_count(*mysql) == 0) {
 
 			/* something on executing query failed. */
-			pppd__mysql_error(mysql_errno(mysql), mysql_sqlstate(mysql), mysql_error(mysql));
+			pppd__mysql_error(mysql_errno(*mysql), mysql_sqlstate(*mysql), mysql_error(*mysql));
 
 			/* return with error and terminate link. */
 			return PPPD_SQL_ERROR_QUERY;
@@ -297,7 +301,7 @@ int32_t pppd__mysql_password(MYSQL *mysql, uint8_t *name, uint8_t *secret_name, 
 }
 
 /* this function update the login status in database. */
-int32_t pppd__mysql_status(MYSQL *mysql, uint8_t *name, uint32_t status) {
+int32_t pppd__mysql_status(MYSQL **mysql, uint8_t *name, uint32_t status) {
 
 	/* some common variables. */
 	uint8_t query[1024];
@@ -311,7 +315,7 @@ int32_t pppd__mysql_status(MYSQL *mysql, uint8_t *name, uint32_t status) {
 	for (count = pppd_mysql_retry_query; count > 0 ; count--) {
 
 		/* check if query was successfully executed. */
-		if (mysql_query(mysql, query) == 0) {
+		if (mysql_query(*mysql, query) == 0) {
 
 			/* indicate that we fetch a result. */
 			found = 1;
@@ -325,7 +329,7 @@ int32_t pppd__mysql_status(MYSQL *mysql, uint8_t *name, uint32_t status) {
 	if (found == 0) {
 
 		/* something on executing query failed. */
-		pppd__mysql_error(mysql_errno(mysql), mysql_sqlstate(mysql), mysql_error(mysql));
+		pppd__mysql_error(mysql_errno(*mysql), mysql_sqlstate(*mysql), mysql_error(*mysql));
 
 		/* return with error and terminate link. */
 		return PPPD_SQL_ERROR_QUERY;
@@ -341,7 +345,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
-	MYSQL mysql;
+	MYSQL *mysql          = NULL;
 
 	/* check if parameters are complete. */
 	if (pppd__mysql_parameter() == 0) {
@@ -413,7 +417,7 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
-	MYSQL mysql;
+	MYSQL *mysql          = NULL;
 
 	/* check if parameters are complete. */
 	if (pppd__mysql_parameter() == 0) {

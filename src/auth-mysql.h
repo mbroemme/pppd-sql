@@ -42,17 +42,17 @@ int32_t pppd__mysql_parameter(
 
 /* this function connect to a mysql database. */
 int32_t pppd__mysql_connect(
-	MYSQL		*mysql
+	MYSQL		**mysql
 );
 
 /* this function disconnect from a mysql database. */
 int32_t pppd__mysql_disconnect(
-	MYSQL		*mysql
+	MYSQL		**mysql
 );
 
 /* this function return the password from database. */
 int32_t pppd__mysql_password(
-	MYSQL		*mysql,
+	MYSQL		**mysql,
 	uint8_t		*name,
 	uint8_t		*secret_name,
 	int32_t		*secret_length
@@ -60,7 +60,7 @@ int32_t pppd__mysql_password(
 
 /* this function update the login status in database. */
 int32_t pppd__mysql_status(
-	MYSQL		*mysql,
+	MYSQL		**mysql,
 	uint8_t		*name,
 	uint32_t	status
 );

@@ -101,7 +101,8 @@ int32_t pppd__pgsql_parameter(void) {
 	if (pppd_pgsql_exclusive == 1) {
 
 		/* check if update column is given. */
-		if (pppd_pgsql_column_update == NULL) {
+		if (pppd_pgsql_column_update == NULL ||
+		    pppd_pgsql_authoritative == 0) {
 
 			/* some required exclusive information are missing. */
 			error("Plugin: %s: PostgreSQL exclusive information are not complete\n", PLUGIN_NAME_PGSQL);
@@ -198,6 +199,9 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 
 		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
 		strncat((char *)query, (char *)query_extended, 1023);
+
+		/* clear the memory with the extended query, to build next one if required. */
+		memset(query_extended, 0, sizeof(query_extended));
 	}
 
 	/* loop through number of query retries. */
@@ -378,7 +382,7 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
-	PGconn *pgsql;
+	PGconn *pgsql         = NULL;
 
 	/* check if parameters are complete. */
 	if (pppd__pgsql_parameter() == 0) {
@@ -450,7 +454,7 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 	/* some common variables. */
 	uint8_t secret_name[MAXSECRETLEN];
 	int32_t secret_length = 0;
-	PGconn *pgsql;
+	PGconn *pgsql         = NULL;
 
 	/* check if parameters are complete. */
 	if (pppd__pgsql_parameter() == 0) {
