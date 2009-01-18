@@ -459,10 +459,10 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 				return 1;
 			}
 		}
-	}
 
-	/* show user that fallback also fails. */
-	error("No CHAP secret found for authenticating %q", name);
+		/* show user that fallback also fails. */
+		error("No CHAP secret found for authenticating %q", name);
+	}
 
 	/* clear the memory with the password, so nobody is able to dump it. */
 	memset(secret_name, 0, sizeof(secret_name));
