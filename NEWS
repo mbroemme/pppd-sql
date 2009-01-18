@@ -1,3 +1,22 @@
+Changes version 0.6.0 (2009-01-18)
+==================================
+
+    * Added support for concurrent connection handling of single users
+      across multiple tunnel servers.
+
+    * Six new PPP configuration options were added:
+
+        - mysql-port
+        - mysql-column-update
+        - mysql-exclusive
+        - pgsql-port
+        - pgsql-column-update
+        - pgsql-exclusive
+
+    * Removed built-in failover support. (It is impossible with the
+      concurrent connection handler and should be made with separate
+      database utilities)
+
 Changes version 0.5.0 (2009-01-12)
 ==================================
 

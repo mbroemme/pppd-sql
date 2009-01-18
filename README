@@ -9,8 +9,8 @@ MS-CHAPv1 and MS-CHAPv2 too. The IPCP negotiation after authentication
 handshake is also supported.
 
 'pppd-sql' supports a flexible configuration scheme, has concurrent
-connection handling for one user and comes with easy and handy
-documentation.
+connection handling for one single user across multiple tunnel servers
+and comes with easy and handy documentation.
 
 'pppd-sql' is based on some parts of 'pppd-mysql' which is a good tool
 to see how pppd can work with mysql, but lacks flexible configuration

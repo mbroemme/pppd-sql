@@ -38,6 +38,12 @@ Q: Why should I use the symmetric encryption for CHAP, MS-CHAPv1 or
 A: Even to secure the storage place of your passwords, please take a
    look into 'README.encryption' too.
 
+Q: Why did you remove the failover functionality?
+A: To implement the concurrent connection handler with multiple
+   tunnel servers, I need to store the login status inside the
+   database. If you use multiple database servers, the write access
+   may result in asynchronous data.
+
 Q: I have a cool idea for 'pppd-sql' but don't know C.
 A: No problem, i started this utility to enhance the PPP Server
    with some cool features. So look at the authors file and send me
