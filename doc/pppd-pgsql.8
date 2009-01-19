@@ -19,7 +19,7 @@
 .\" License along with this manual; if not, write to the Free
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
-.TH pppd-pgsql 8 2009-01-16 "The PPP PostgreSQL plugin"
+.TH pppd-pgsql 8 2009-01-19 "The PPP PostgreSQL plugin"
 .SH NAME
 pgsql.so \- PostgreSQL authentication plugin for
 .BR pppd (8)
@@ -108,6 +108,12 @@ The PostgreSQL connection retry limit, if connection failed it will be retried a
 .TP
 \fBpgsql-retry-query\fP \fIretries\fP
 The PostgreSQL query retry limit, if query failed (maybe the table or row is locked) it will be retried as often as in \fIretries\fP specified. (Default: 5)
+.TP
+\fBpgsql-ip-up\fP \fI/etc/ppp/ip-up-pgsql\fP
+If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-up-pgsql\fP when IPCP has come up. The difference with the PPP internal version is, that this version adds the username as additional parameter and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
+.TP
+\fBpgsql-ip-down\fP \fI/etc/ppp/ip-down-pgsql\fP
+If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-down-pgsql\fP when IPCP goes down. The difference with the PPP internal version is, that this version adds the username as additional parameter and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
 .SH SEE ALSO
 .BR pppd (8)
 .SH AUTHOR
