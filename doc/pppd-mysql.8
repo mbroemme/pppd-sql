@@ -113,7 +113,7 @@ The MySQL query retry limit, if query failed (maybe the table or row is locked) 
 If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-up-mysql\fP when IPCP has come up. The difference with the PPP internal version is, that this version adds the username as additional parameter and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
 .TP
 \fBmysql-ip-down\fP \fI/etc/ppp/ip-down-mysql\fP
-If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-down-mysql\fP when IPCP goes down. The difference with the PPP internal version is, that this version adds the username as additional parameter and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
+If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-down-mysql\fP when IPCP goes down. The difference with the PPP internal version is, that this version adds the username, received bytes, transmitted bytes and link duration as additional parameters and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
 .SH SEE ALSO
 .BR pppd (8)
 .SH AUTHOR
