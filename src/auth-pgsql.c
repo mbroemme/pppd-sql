@@ -379,11 +379,71 @@ int32_t pppd__pgsql_status(PGconn **pgsql, uint8_t *name, uint32_t status) {
 	return 0;
 }
 
+/* this function is the ip up notifier for the ppp daemon. */
+void pppd__pgsql_up(void *opaque, int32_t arg) {
+
+	/* some common variables. */
+	uint8_t strspeed[32];
+	uint8_t strlocal[32];
+	uint8_t strremote[32];
+	uint8_t *argv[9];
+
+	/* check if we should execute a script. */
+	if (pppd_pgsql_ip_up != NULL) {
+
+		/* create the parameters. */
+		slprintf((char *)strspeed, sizeof(strspeed), "%d", baud_rate);
+		slprintf((char *)strlocal, sizeof(strlocal), "%I", ipcp_gotoptions[0].ouraddr);
+		slprintf((char *)strremote, sizeof(strremote), "%I", ipcp_hisoptions[0].hisaddr);
+
+		/* build argument list. */
+		argv[0] = pppd_pgsql_ip_up;
+		argv[1] = (uint8_t *)ifname;
+		argv[2] = (uint8_t *)devnam;
+		argv[3] = strspeed;
+		argv[4] = strlocal;
+		argv[5] = strremote;
+		argv[6] = (uint8_t *)ipparam;
+		argv[7] = username;
+		argv[8] = NULL;
+
+		/* execute script. */
+		run_program((char *)pppd_pgsql_ip_up, (char **)argv, 0, NULL, NULL, 1);
+	}
+}
+
 /* this function is the ip down notifier for the ppp daemon. */
 void pppd__pgsql_down(void *opaque, int32_t arg) {
 
 	/* some common variables. */
 	PGconn *pgsql = NULL;
+	uint8_t strspeed[32];
+	uint8_t strlocal[32];
+	uint8_t strremote[32];
+	uint8_t *argv[9];
+
+	/* check if we should execute a script. */
+	if (pppd_pgsql_ip_down != NULL) {
+
+		/* create the parameters. */
+		slprintf((char *)strspeed, sizeof(strspeed), "%d", baud_rate);
+		slprintf((char *)strlocal, sizeof(strlocal), "%I", ipcp_gotoptions[0].ouraddr);
+		slprintf((char *)strremote, sizeof(strremote), "%I", ipcp_hisoptions[0].hisaddr);
+
+		/* build argument list. */
+		argv[0] = pppd_pgsql_ip_down;
+		argv[1] = (uint8_t *)ifname;
+		argv[2] = (uint8_t *)devnam;
+		argv[3] = strspeed;
+		argv[4] = strlocal;
+		argv[5] = strremote;
+		argv[6] = (uint8_t *)ipparam;
+		argv[7] = username;
+		argv[8] = NULL;
+
+		/* execute script. */
+		run_program((char *)pppd_pgsql_ip_down, (char **)argv, 0, NULL, NULL, 1);
+	}
 
 	/* check if postgresql connect is working. */
 	if (pppd__pgsql_connect(&pgsql) == 0) {

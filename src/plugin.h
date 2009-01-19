@@ -33,10 +33,14 @@
 /* generic includes. */
 #include <stdint.h>
 
-/* ppp includes. */
+/* ppp generic includes. */
 #include <pppd/chap-new.h>
 #include <pppd/md5.h>
 #include <pppd/pppd.h>
+
+/* ppp ipcp includes. */
+#include <pppd/fsm.h>
+#include <pppd/ipcp.h>
 
 /* openssl includes. */
 #include <openssl/des.h>

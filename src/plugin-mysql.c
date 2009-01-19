@@ -50,6 +50,8 @@ uint32_t pppd_mysql_ignore_null		= 0;
 uint32_t pppd_mysql_connect_timeout	= 5;
 uint32_t pppd_mysql_retry_connect	= 5;
 uint32_t pppd_mysql_retry_query		= 5;
+uint8_t *pppd_mysql_ip_up		= NULL;
+uint8_t *pppd_mysql_ip_down		= NULL;
 
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
@@ -58,26 +60,28 @@ uint32_t client_ip			= 0;
 
 /* extra option structure. */
 option_t options[] = {
-	{ "mysql-host", o_string, &pppd_mysql_host, "Set MySQL server host"},
-	{ "mysql-port", o_string, &pppd_mysql_port, "Set MySQL server port"},
-	{ "mysql-user", o_string, &pppd_mysql_user, "Set MySQL username"},
-	{ "mysql-pass", o_string, &pppd_mysql_pass, "Set MySQL password"},
-	{ "mysql-pass-encryption", o_string, &pppd_mysql_pass_encryption, "Set MySQL password encryption algorithm"},
-	{ "mysql-pass-key", o_string, &pppd_mysql_pass_key, "Set MySQL password encryption key or salt"},
-	{ "mysql-database", o_string, &pppd_mysql_database, "Set MySQL database name"},
-	{ "mysql-table", o_string, &pppd_mysql_table, "Set MySQL authentication table"},
-	{ "mysql-column-user", o_string, &pppd_mysql_column_user, "Set MySQL username field"},
-	{ "mysql-column-pass", o_string, &pppd_mysql_column_pass, "Set MySQL password field"},
-	{ "mysql-column-ip", o_string, &pppd_mysql_column_ip, "Set MySQL client ip address field"},
-	{ "mysql-column-update", o_string, &pppd_mysql_column_update, "Set MySQL update field"},
-	{ "mysql-condition", o_string, &pppd_mysql_condition, "Set MySQL condition clause"},
-	{ "mysql-exclusive", o_bool, &pppd_mysql_exclusive, "Set MySQL to forbid concurrent connection from one user", 0 | 1},
-	{ "mysql-authoritative", o_bool, &pppd_mysql_authoritative, "Set MySQL to be authoritative authenticator", 0 | 1},
-	{ "mysql-ignore-multiple", o_bool, &pppd_mysql_ignore_multiple, "Set MySQL to cover first row from multiple rows", 0 | 1},
-	{ "mysql-ignore-null", o_bool, &pppd_mysql_ignore_null, "Set MySQL to cover NULL results as string", 0 | 1},
-	{ "mysql-connect-timeout", o_int, &pppd_mysql_connect_timeout, "Set MySQL connection timeout"},
-	{ "mysql-retry-connect", o_int, &pppd_mysql_retry_connect, "Set MySQL connection retries"},
-	{ "mysql-retry-query", o_int, &pppd_mysql_retry_query, "Set MySQL query retries"},
+	{ "mysql-host", o_string, &pppd_mysql_host, "Set MySQL server host" },
+	{ "mysql-port", o_string, &pppd_mysql_port, "Set MySQL server port" },
+	{ "mysql-user", o_string, &pppd_mysql_user, "Set MySQL username" },
+	{ "mysql-pass", o_string, &pppd_mysql_pass, "Set MySQL password" },
+	{ "mysql-pass-encryption", o_string, &pppd_mysql_pass_encryption, "Set MySQL password encryption algorithm" },
+	{ "mysql-pass-key", o_string, &pppd_mysql_pass_key, "Set MySQL password encryption key or salt" },
+	{ "mysql-database", o_string, &pppd_mysql_database, "Set MySQL database name" },
+	{ "mysql-table", o_string, &pppd_mysql_table, "Set MySQL authentication table" },
+	{ "mysql-column-user", o_string, &pppd_mysql_column_user, "Set MySQL username field" },
+	{ "mysql-column-pass", o_string, &pppd_mysql_column_pass, "Set MySQL password field" },
+	{ "mysql-column-ip", o_string, &pppd_mysql_column_ip, "Set MySQL client ip address field" },
+	{ "mysql-column-update", o_string, &pppd_mysql_column_update, "Set MySQL update field" },
+	{ "mysql-condition", o_string, &pppd_mysql_condition, "Set MySQL condition clause" },
+	{ "mysql-exclusive", o_bool, &pppd_mysql_exclusive, "Set MySQL to forbid concurrent connection from one user", 0 | 1 },
+	{ "mysql-authoritative", o_bool, &pppd_mysql_authoritative, "Set MySQL to be authoritative authenticator", 0 | 1 },
+	{ "mysql-ignore-multiple", o_bool, &pppd_mysql_ignore_multiple, "Set MySQL to cover first row from multiple rows", 0 | 1 },
+	{ "mysql-ignore-null", o_bool, &pppd_mysql_ignore_null, "Set MySQL to cover NULL results as string", 0 | 1 },
+	{ "mysql-connect-timeout", o_int, &pppd_mysql_connect_timeout, "Set MySQL connection timeout" },
+	{ "mysql-retry-connect", o_int, &pppd_mysql_retry_connect, "Set MySQL connection retries" },
+	{ "mysql-retry-query", o_int, &pppd_mysql_retry_query, "Set MySQL query retries" },
+	{ "mysql-ip-up", o_string, &pppd_mysql_ip_up, "Set MySQL script to execute when IPCP has come up" },
+	{ "mysql-ip-down", o_string, &pppd_mysql_ip_down, "Set MySQL script to execute when IPCP goes down" },
 	{ NULL }
 };
 
@@ -99,7 +103,8 @@ void plugin_init(void) {
 	ip_choose_hook		= pppd__ip_choose;
 	allowed_address_hook	= pppd__allowed_address;
 
-	/* add ip down notifier. */
+	/* add ip notifiers. */
+	add_notifier(&ip_up_notifier, pppd__mysql_up, NULL);
 	add_notifier(&ip_down_notifier, pppd__mysql_down, NULL);
 
 	/* point extra options to our array. */

@@ -50,6 +50,8 @@ uint32_t pppd_pgsql_ignore_null		= 0;
 uint32_t pppd_pgsql_connect_timeout	= 5;
 uint32_t pppd_pgsql_retry_connect	= 5;
 uint32_t pppd_pgsql_retry_query		= 5;
+uint8_t *pppd_pgsql_ip_up		= NULL;
+uint8_t *pppd_pgsql_ip_down		= NULL;
 
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
@@ -58,26 +60,28 @@ uint32_t client_ip			= 0;
 
 /* extra option structure. */
 option_t options[] = {
-	{ "pgsql-host", o_string, &pppd_pgsql_host, "Set PostgreSQL server host"},
-	{ "pgsql-port", o_string, &pppd_pgsql_port, "Set PostgreSQL server port"},
-	{ "pgsql-user", o_string, &pppd_pgsql_user, "Set PostgreSQL username"},
-	{ "pgsql-pass", o_string, &pppd_pgsql_pass, "Set PostgreSQL password"},
-	{ "pgsql-pass-encryption", o_string, &pppd_pgsql_pass_encryption, "Set PostgreSQL password encryption algorithm"},
-	{ "pgsql-pass-key", o_string, &pppd_pgsql_pass_key, "Set PostgreSQL password encryption key or salt"},
-	{ "pgsql-database", o_string, &pppd_pgsql_database, "Set PostgreSQL database name"},
-	{ "pgsql-table", o_string, &pppd_pgsql_table, "Set PostgreSQL authentication table"},
-	{ "pgsql-column-user", o_string, &pppd_pgsql_column_user, "Set PostgreSQL username field"},
-	{ "pgsql-column-pass", o_string, &pppd_pgsql_column_pass, "Set PostgreSQL password field"},
-	{ "pgsql-column-ip", o_string, &pppd_pgsql_column_ip, "Set PostgreSQL client ip address field"},
-	{ "pgsql-column-update", o_string, &pppd_pgsql_column_update, "Set PostgreSQL update field"},
-	{ "pgsql-condition", o_string, &pppd_pgsql_condition, "Set PostgreSQL condition clause"},
-	{ "pgsql-exclusive", o_bool, &pppd_pgsql_exclusive, "Set PostgreSQL to forbid concurrent connection from one user", 0 | 1},
-	{ "pgsql-authoritative", o_bool, &pppd_pgsql_authoritative, "Set PostgreSQL to be authoritative authenticator", 0 | 1},
-	{ "pgsql-ignore-multiple", o_bool, &pppd_pgsql_ignore_multiple, "Set PostgreSQL to cover first row from multiple rows", 0 | 1},
-	{ "pgsql-ignore-null", o_bool, &pppd_pgsql_ignore_null, "Set PostgreSQL to cover NULL results as string", 0 | 1},
-	{ "pgsql-connect-timeout", o_int, &pppd_pgsql_connect_timeout, "Set PostgreSQL connection timeout"},
-	{ "pgsql-retry-connect", o_int, &pppd_pgsql_retry_connect, "Set PostgreSQL connection retries"},
-	{ "pgsql-retry-query", o_int, &pppd_pgsql_retry_query, "Set PostgreSQL query retries"},
+	{ "pgsql-host", o_string, &pppd_pgsql_host, "Set PostgreSQL server host" },
+	{ "pgsql-port", o_string, &pppd_pgsql_port, "Set PostgreSQL server port" },
+	{ "pgsql-user", o_string, &pppd_pgsql_user, "Set PostgreSQL username" },
+	{ "pgsql-pass", o_string, &pppd_pgsql_pass, "Set PostgreSQL password" },
+	{ "pgsql-pass-encryption", o_string, &pppd_pgsql_pass_encryption, "Set PostgreSQL password encryption algorithm" },
+	{ "pgsql-pass-key", o_string, &pppd_pgsql_pass_key, "Set PostgreSQL password encryption key or salt" },
+	{ "pgsql-database", o_string, &pppd_pgsql_database, "Set PostgreSQL database name" },
+	{ "pgsql-table", o_string, &pppd_pgsql_table, "Set PostgreSQL authentication table" },
+	{ "pgsql-column-user", o_string, &pppd_pgsql_column_user, "Set PostgreSQL username field" },
+	{ "pgsql-column-pass", o_string, &pppd_pgsql_column_pass, "Set PostgreSQL password field" },
+	{ "pgsql-column-ip", o_string, &pppd_pgsql_column_ip, "Set PostgreSQL client ip address field" },
+	{ "pgsql-column-update", o_string, &pppd_pgsql_column_update, "Set PostgreSQL update field" },
+	{ "pgsql-condition", o_string, &pppd_pgsql_condition, "Set PostgreSQL condition clause" },
+	{ "pgsql-exclusive", o_bool, &pppd_pgsql_exclusive, "Set PostgreSQL to forbid concurrent connection from one user", 0 | 1 },
+	{ "pgsql-authoritative", o_bool, &pppd_pgsql_authoritative, "Set PostgreSQL to be authoritative authenticator", 0 | 1 },
+	{ "pgsql-ignore-multiple", o_bool, &pppd_pgsql_ignore_multiple, "Set PostgreSQL to cover first row from multiple rows", 0 | 1 },
+	{ "pgsql-ignore-null", o_bool, &pppd_pgsql_ignore_null, "Set PostgreSQL to cover NULL results as string", 0 | 1 },
+	{ "pgsql-connect-timeout", o_int, &pppd_pgsql_connect_timeout, "Set PostgreSQL connection timeout" },
+	{ "pgsql-retry-connect", o_int, &pppd_pgsql_retry_connect, "Set PostgreSQL connection retries" },
+	{ "pgsql-retry-query", o_int, &pppd_pgsql_retry_query, "Set PostgreSQL query retries" },
+	{ "pgsql-ip-up", o_string, &pppd_pgsql_ip_up, "Set PostgreSQL script to execute when IPCP has come up" },
+	{ "pgsql-ip-down", o_string, &pppd_pgsql_ip_down, "Set PostgreSQL script to execute when IPCP goes down" },
 	{ NULL }
 };
 
@@ -99,7 +103,8 @@ void plugin_init(void) {
 	ip_choose_hook		= pppd__ip_choose;
 	allowed_address_hook	= pppd__allowed_address;
 
-	/* add ip down notifier. */
+	/* add ip notifiers. */
+	add_notifier(&ip_up_notifier, pppd__pgsql_up, NULL);
 	add_notifier(&ip_down_notifier, pppd__pgsql_down, NULL);
 
 	/* point extra options to our array. */

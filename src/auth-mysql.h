@@ -65,6 +65,12 @@ int32_t pppd__mysql_status(
 	uint32_t	status
 );
 
+/* this function is the ip up notifier for the ppp daemon. */
+void pppd__mysql_up(
+	void		*opaque,
+	int32_t		arg
+);
+
 /* this function is the ip down notifier for the ppp daemon. */
 void pppd__mysql_down(
 	void		*opaque,
