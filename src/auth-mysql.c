@@ -311,35 +311,31 @@ int32_t pppd__mysql_status(MYSQL **mysql, uint8_t *name, uint32_t status) {
 	uint32_t count = 0;
 	uint32_t found = 0;
 
-	/* check if status should be updated. */
-	if (pppd_mysql_exclusive == 1) {
+	/* build query for database. */
+	snprintf(query, 1024, "UPDATE %s SET %s='%d' WHERE %s='%s'", pppd_mysql_table, pppd_mysql_column_update, status, pppd_mysql_column_user, name);
 
-		/* build query for database. */
-		snprintf(query, 1024, "UPDATE %s SET %s='%d' WHERE %s='%s'", pppd_mysql_table, pppd_mysql_column_update, status, pppd_mysql_column_user, name);
+	/* loop through number of query retries. */
+	for (count = pppd_mysql_retry_query; count > 0 ; count--) {
 
-		/* loop through number of query retries. */
-		for (count = pppd_mysql_retry_query; count > 0 ; count--) {
+		/* check if query was successfully executed. */
+		if (mysql_query(*mysql, query) == 0) {
 
-			/* check if query was successfully executed. */
-			if (mysql_query(*mysql, query) == 0) {
+			/* indicate that we fetch a result. */
+			found = 1;
 
-				/* indicate that we fetch a result. */
-				found = 1;
-
-				/* query result was ok, so break loop. */
-				break;
-			}
+			/* query result was ok, so break loop. */
+			break;
 		}
+	}
 
-		/* check if no query was executed successfully, very bad :) */
-		if (found == 0) {
+	/* check if no query was executed successfully, very bad :) */
+	if (found == 0) {
 
-			/* something on executing query failed. */
-			pppd__mysql_error(mysql_errno(*mysql), mysql_sqlstate(*mysql), mysql_error(*mysql));
+		/* something on executing query failed. */
+		pppd__mysql_error(mysql_errno(*mysql), mysql_sqlstate(*mysql), mysql_error(*mysql));
 
-			/* return with error and terminate link. */
-			return PPPD_SQL_ERROR_QUERY;
-		}
+		/* return with error and terminate link. */
+		return PPPD_SQL_ERROR_QUERY;
 	}
 
 	/* if no error was found, return zero. */
@@ -379,18 +375,24 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 		run_program(pppd_mysql_ip_up, (char **)argv, 0, NULL, NULL, 1);
 	}
 
-	/* check if mysql connect is working. */
-	if (pppd__mysql_connect(&mysql) == 0) {
+	/* check if status should be updated. */
+	if (pppd_mysql_exclusive     == 1 &&
+	    pppd_mysql_authoritative == 1 &&
+	    pppd_mysql_column_update != NULL) {
 
-		/* check if database update was successful. */
-		if (pppd__mysql_status(&mysql, username, 1) < 0) {
+		/* check if mysql connect is working. */
+		if (pppd__mysql_connect(&mysql) == 0) {
 
-			/* die bitch die... (something is broken here) */
-			die(1);
+			/* check if database update was successful. */
+			if (pppd__mysql_status(&mysql, username, 1) < 0) {
+
+				/* die bitch die... (something is broken here) */
+				die(1);
+			}
+
+			/* disconnect from mysql. */
+			pppd__mysql_disconnect(&mysql);
 		}
-
-		/* disconnect from mysql. */
-		pppd__mysql_disconnect(&mysql);
 	}
 }
 
@@ -407,14 +409,20 @@ void pppd__mysql_down(void *opaque, int32_t arg) {
 	uint8_t str_duration[32];
 	uint8_t *argv[12];
 
-	/* check if mysql connect is working. */
-	if (pppd__mysql_connect(&mysql) == 0) {
+	/* check if status should be updated. */
+	if (pppd_mysql_exclusive     == 1 &&
+	    pppd_mysql_authoritative == 1 &&
+	    pppd_mysql_column_update != NULL) {
 
-		/* update database. (ignore return code, because what should I do, stop the disconnect?) */
-		pppd__mysql_status(&mysql, username, 0);
+		/* check if mysql connect is working. */
+		if (pppd__mysql_connect(&mysql) == 0) {
 
-		/* disconnect from mysql. */
-		pppd__mysql_disconnect(&mysql);
+			/* update database. (ignore return code, because what should I do, stop the disconnect?) */
+			pppd__mysql_status(&mysql, username, 0);
+
+			/* disconnect from mysql. */
+			pppd__mysql_disconnect(&mysql);
+		}
 	}
 
 	/* check if we should execute a script. */

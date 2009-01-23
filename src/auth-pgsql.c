@@ -338,46 +338,42 @@ int32_t pppd__pgsql_status(PGconn **pgsql, uint8_t *name, uint32_t status) {
 	uint32_t found = 0;
 	PGresult *result = NULL;
 
-	/* check if status should be updated. */
-	if (pppd_pgsql_exclusive == 1) {
+	/* build query for database. */
+	snprintf((char *)query, 1024, "UPDATE %s SET %s='%d' WHERE %s='%s'", pppd_pgsql_table, pppd_pgsql_column_update, status, pppd_pgsql_column_user, name);
 
-		/* build query for database. */
-		snprintf((char *)query, 1024, "UPDATE %s SET %s='%d' WHERE %s='%s'", pppd_pgsql_table, pppd_pgsql_column_update, status, pppd_pgsql_column_user, name);
+	/* loop through number of query retries. */
+	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
 
-		/* loop through number of query retries. */
-		for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
+		/* check if query was successfully executed. */
+		if ((result = PQexec(*pgsql, (char *)query)) != NULL) {
 
-			/* check if query was successfully executed. */
-			if ((result = PQexec(*pgsql, (char *)query)) != NULL) {
+			/* check if the result is okay. */
+			if (PQresultStatus(result) == PGRES_COMMAND_OK) {
 
-				/* check if the result is okay. */
-				if (PQresultStatus(result) == PGRES_COMMAND_OK) {
+				/* indicate that we fetch a result. */
+				found = 1;
 
-					/* indicate that we fetch a result. */
-					found = 1;
-
-					/* query result was ok, so break loop. */
-					break;
-				}
+				/* query result was ok, so break loop. */
+				break;
 			}
-
-			/* clear memory to avoid leaks. */
-			PQclear(result);
-		}
-
-		/* check if no query was executed successfully, very bad :) */
-		if (found == 0) {
-
-			/* something on executing query failed. */
-			pppd__pgsql_error((uint8_t *)PQerrorMessage(*pgsql));
-
-			/* return with error and terminate link. */
-			return PPPD_SQL_ERROR_QUERY;
 		}
 
 		/* clear memory to avoid leaks. */
 		PQclear(result);
 	}
+
+	/* check if no query was executed successfully, very bad :) */
+	if (found == 0) {
+
+		/* something on executing query failed. */
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(*pgsql));
+
+		/* return with error and terminate link. */
+		return PPPD_SQL_ERROR_QUERY;
+	}
+
+	/* clear memory to avoid leaks. */
+	PQclear(result);
 
 	/* if no error was found, return zero. */
 	return 0;
@@ -416,18 +412,24 @@ void pppd__pgsql_up(void *opaque, int32_t arg) {
 		run_program((char *)pppd_pgsql_ip_up, (char **)argv, 0, NULL, NULL, 1);
 	}
 
-	/* check if postgresql connect is working. */
-	if (pppd__pgsql_connect(&pgsql) == 0) {
+	/* check if status should be updated. */
+	if (pppd_pgsql_exclusive     == 1 &&
+	    pppd_pgsql_authoritative == 1 &&
+	    pppd_pgsql_column_update != NULL) {
 
-		/* check if database update was successful. */
-		if (pppd__pgsql_status(&pgsql, username, 1) < 0) {
+		/* check if postgresql connect is working. */
+		if (pppd__pgsql_connect(&pgsql) == 0) {
 
-			/* die bitch die... (something is broken here) */
-			die(1);
+			/* check if database update was successful. */
+			if (pppd__pgsql_status(&pgsql, username, 1) < 0) {
+
+				/* die bitch die... (something is broken here) */
+				die(1);
+			}
+
+			/* disconnect from postgresql. */
+			pppd__pgsql_disconnect(&pgsql);
 		}
-
-		/* disconnect from postgresql. */
-		pppd__pgsql_disconnect(&pgsql);
 	}
 }
 
@@ -444,14 +446,20 @@ void pppd__pgsql_down(void *opaque, int32_t arg) {
 	uint8_t str_duration[32];
 	uint8_t *argv[12];
 
-	/* check if postgresql connect is working. */
-	if (pppd__pgsql_connect(&pgsql) == 0) {
+	/* check if status should be updated. */
+	if (pppd_pgsql_exclusive     == 1 &&
+	    pppd_pgsql_authoritative == 1 &&
+	    pppd_pgsql_column_update != NULL) {
 
-		/* update database. (ignore return code, because what should I do, stop the disconnect?) */
-		pppd__pgsql_status(&pgsql, username, 0);
+		/* check if postgresql connect is working. */
+		if (pppd__pgsql_connect(&pgsql) == 0) {
 
-		/* disconnect from postgresql. */
-		pppd__pgsql_disconnect(&pgsql);
+			/* update database. (ignore return code, because what should I do, stop the disconnect?) */
+			pppd__pgsql_status(&pgsql, username, 0);
+
+			/* disconnect from postgresql. */
+			pppd__pgsql_disconnect(&pgsql);
+		}
 	}
 
 	/* check if we should execute a script. */
