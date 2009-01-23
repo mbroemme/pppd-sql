@@ -423,14 +423,20 @@ void pppd__pgsql_up(void *opaque, int32_t arg) {
 			/* check if database update was successful. */
 			if (pppd__pgsql_status(&pgsql, username, 1) < 0) {
 
-				/* die bitch die... (something is broken here) */
-				die(1);
+				/* disconnect from postgresql. */
+				pppd__pgsql_disconnect(&pgsql);
+
+				/* return. */
+				return;
 			}
 
 			/* disconnect from postgresql. */
 			pppd__pgsql_disconnect(&pgsql);
 		}
 	}
+
+	/* if we reach this point, die bitch die... (something is broken here) */
+	die(1);
 }
 
 /* this function is the ip down notifier for the ppp daemon. */

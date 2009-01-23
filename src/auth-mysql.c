@@ -384,16 +384,22 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 		if (pppd__mysql_connect(&mysql) == 0) {
 
 			/* check if database update was successful. */
-			if (pppd__mysql_status(&mysql, username, 1) < 0) {
+			if (pppd__mysql_status(&mysql, username, 1) == 0) {
 
-				/* die bitch die... (something is broken here) */
-				die(1);
+				/* disconnect from mysql. */
+				pppd__mysql_disconnect(&mysql);
+
+				/* return. */
+				return;
 			}
 
 			/* disconnect from mysql. */
 			pppd__mysql_disconnect(&mysql);
 		}
 	}
+
+	/* if we reach this point, die bitch die... (something is broken here) */
+	die(1);
 }
 
 /* this function is the ip down notifier for the ppp daemon. */
