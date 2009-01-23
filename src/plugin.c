@@ -71,23 +71,23 @@ int32_t pppd__ip_up(uint8_t *username, uint8_t *program) {
 	uint8_t *argv[9];
 
 	/* create the parameters. */
-	slprintf(strspeed, sizeof(strspeed), "%d", baud_rate);
-	slprintf(strlocal, sizeof(strlocal), "%I", ipcp_gotoptions[0].ouraddr);
-	slprintf(strremote, sizeof(strremote), "%I", ipcp_hisoptions[0].hisaddr);
+	slprintf((char *)strspeed, sizeof(strspeed), "%d", baud_rate);
+	slprintf((char *)strlocal, sizeof(strlocal), "%I", ipcp_gotoptions[0].ouraddr);
+	slprintf((char *)strremote, sizeof(strremote), "%I", ipcp_hisoptions[0].hisaddr);
 
 	/* build argument list. */
 	argv[0] = program;
-	argv[1] = ifname;
-	argv[2] = devnam;
+	argv[1] = (uint8_t *)ifname;
+	argv[2] = (uint8_t *)devnam;
 	argv[3] = strspeed;
 	argv[4] = strlocal;
 	argv[5] = strremote;
-	argv[6] = ipparam;
+	argv[6] = (uint8_t *)ipparam;
 	argv[7] = username;
 	argv[8] = NULL;
 
 	/* execute script. */
-	run_program(program, (char **)argv, 0, NULL, NULL, 1);
+	run_program((char *)program, (char **)argv, 0, NULL, NULL, 1);
 
 	/* if no error was found, return zero. */
 	return 0;
@@ -106,21 +106,21 @@ int32_t pppd__ip_down(uint8_t *username, uint8_t *program) {
 	uint8_t *argv[12];
 
 	/* create the parameters. */
-	slprintf(str_speed, sizeof(str_speed), "%d", baud_rate);
-	slprintf(str_local, sizeof(str_local), "%I", ipcp_gotoptions[0].ouraddr);
-	slprintf(str_remote, sizeof(str_remote), "%I", ipcp_hisoptions[0].hisaddr);
-	slprintf(str_bytes_received, sizeof(str_bytes_received), "%d", link_stats.bytes_in);
-	slprintf(str_bytes_transmitted, sizeof(str_bytes_transmitted), "%d", link_stats.bytes_out);
-	slprintf(str_duration, sizeof(str_duration), "%d", link_connect_time);
+	slprintf((char *)str_speed, sizeof(str_speed), "%d", baud_rate);
+	slprintf((char *)str_local, sizeof(str_local), "%I", ipcp_gotoptions[0].ouraddr);
+	slprintf((char *)str_remote, sizeof(str_remote), "%I", ipcp_hisoptions[0].hisaddr);
+	slprintf((char *)str_bytes_received, sizeof(str_bytes_received), "%d", link_stats.bytes_in);
+	slprintf((char *)str_bytes_transmitted, sizeof(str_bytes_transmitted), "%d", link_stats.bytes_out);
+	slprintf((char *)str_duration, sizeof(str_duration), "%d", link_connect_time);
 
 	/* build argument list. */
 	argv[0] = program;
-	argv[1] = ifname;
-	argv[2] = devnam;
+	argv[1] = (uint8_t *)ifname;
+	argv[2] = (uint8_t *)devnam;
 	argv[3] = str_speed;
 	argv[4] = str_local;
 	argv[5] = str_remote;
-	argv[6] = ipparam;
+	argv[6] = (uint8_t *)ipparam;
 	argv[7] = username;
 	argv[8] = str_bytes_received;
 	argv[9] = str_bytes_transmitted;
@@ -128,7 +128,7 @@ int32_t pppd__ip_down(uint8_t *username, uint8_t *program) {
 	argv[11] = NULL;
 
 	/* execute script. */
-	run_program(program, (char **)argv, 0, NULL, NULL, 1);
+	run_program((char *)program, (char **)argv, 0, NULL, NULL, 1);
 
 	/* if no error was found, return zero. */
 	return 0;
