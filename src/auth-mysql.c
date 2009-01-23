@@ -347,32 +347,12 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 
 	/* some common variables. */
 	MYSQL *mysql = NULL;
-	uint8_t strspeed[32];
-	uint8_t strlocal[32];
-	uint8_t strremote[32];
-	uint8_t *argv[9];
 
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_up != NULL) {
 
-		/* create the parameters. */
-		slprintf(strspeed, sizeof(strspeed), "%d", baud_rate);
-		slprintf(strlocal, sizeof(strlocal), "%I", ipcp_gotoptions[0].ouraddr);
-		slprintf(strremote, sizeof(strremote), "%I", ipcp_hisoptions[0].hisaddr);
-
-		/* build argument list. */
-		argv[0] = pppd_mysql_ip_up;
-		argv[1] = ifname;
-		argv[2] = devnam;
-		argv[3] = strspeed;
-		argv[4] = strlocal;
-		argv[5] = strremote;
-		argv[6] = ipparam;
-		argv[7] = username;
-		argv[8] = NULL;
-
 		/* execute script. */
-		run_program(pppd_mysql_ip_up, (char **)argv, 0, NULL, NULL, 1);
+		pppd__ip_up(username, pppd_mysql_ip_up);
 	}
 
 	/* check if status should be updated. */
@@ -398,6 +378,13 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 		}
 	}
 
+	/* check if we should rollback ip configuration. */
+	if (pppd_mysql_ip_down != NULL) {
+
+		/* execute script. */
+		pppd__ip_down(username, pppd_mysql_ip_down);
+	}
+
 	/* if we reach this point, die bitch die... (something is broken here) */
 	die(1);
 }
@@ -407,13 +394,6 @@ void pppd__mysql_down(void *opaque, int32_t arg) {
 
 	/* some common variables. */
 	MYSQL *mysql = NULL;
-	uint8_t str_speed[32];
-	uint8_t str_local[32];
-	uint8_t str_remote[32];
-	uint8_t str_bytes_received[32];
-	uint8_t str_bytes_transmitted[32];
-	uint8_t str_duration[32];
-	uint8_t *argv[12];
 
 	/* check if status should be updated. */
 	if (pppd_mysql_exclusive     == 1 &&
@@ -434,30 +414,8 @@ void pppd__mysql_down(void *opaque, int32_t arg) {
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_down != NULL) {
 
-		/* create the parameters. */
-		slprintf(str_speed, sizeof(str_speed), "%d", baud_rate);
-		slprintf(str_local, sizeof(str_local), "%I", ipcp_gotoptions[0].ouraddr);
-		slprintf(str_remote, sizeof(str_remote), "%I", ipcp_hisoptions[0].hisaddr);
-		slprintf(str_bytes_received, sizeof(str_bytes_received), "%d", link_stats.bytes_in);
-		slprintf(str_bytes_transmitted, sizeof(str_bytes_transmitted), "%d", link_stats.bytes_out);
-		slprintf(str_duration, sizeof(str_duration), "%d", link_connect_time);
-
-		/* build argument list. */
-		argv[0] = pppd_mysql_ip_down;
-		argv[1] = ifname;
-		argv[2] = devnam;
-		argv[3] = str_speed;
-		argv[4] = str_local;
-		argv[5] = str_remote;
-		argv[6] = ipparam;
-		argv[7] = username;
-		argv[8] = str_bytes_received;
-		argv[9] = str_bytes_transmitted;
-		argv[10] = str_duration;
-		argv[11] = NULL;
-
 		/* execute script. */
-		run_program(pppd_mysql_ip_down, (char **)argv, 0, NULL, NULL, 1);
+		pppd__ip_down(username, pppd_mysql_ip_down);
 	}
 }
 

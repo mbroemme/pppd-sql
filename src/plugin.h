@@ -84,6 +84,18 @@ int32_t pppd__allowed_address(
 	uint32_t	addr
 );
 
+/* this function will execute a script when IPCP comes up. */
+int32_t pppd__ip_up(
+	uint8_t		*username,
+	uint8_t		*program
+);
+
+/* this function will execute a script when IPCP goes down. */
+int32_t pppd__ip_down(
+	uint8_t		*username,
+	uint8_t		*program
+);
+
 /* this function verify the given password. */
 int32_t pppd__verify_password(
 	uint8_t		*passwd,
