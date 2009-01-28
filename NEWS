@@ -1,3 +1,19 @@
+Changes version 0.7.0 (2009-01-28)
+==================================
+
+    * Added support for exclusive read and write lock on the selected
+      row.
+
+    * Added support for ip configuration scripts with additional
+      parameters and blocking support.
+
+    * Four new PPP configuration options were added:
+
+        - mysql-ip-up
+        - mysql-ip-down
+        - pgsql-ip-up
+        - pgsql-ip-down
+
 Changes version 0.6.0 (2009-01-18)
 ==================================
 
