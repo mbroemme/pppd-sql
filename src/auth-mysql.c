@@ -145,8 +145,12 @@ int32_t pppd__mysql_connect(MYSQL **mysql) {
 			}
 		} else {
 
-			/* connection is working. */
-			break;
+			/* check if disable auto commit of database changes was successful. */
+			if (mysql_autocommit(*mysql, 0) == 0) {
+
+				/* connection is working. */
+				break;
+			}
 		}
 	}
 
@@ -320,12 +324,19 @@ int32_t pppd__mysql_status(MYSQL **mysql, uint8_t *name, uint32_t status) {
 		/* check if query was successfully executed. */
 		if (mysql_query(*mysql, query) == 0) {
 
-			/* indicate that we fetch a result. */
-			found = 1;
+			/* check if commit change to database was successfully executed. */
+			if (mysql_commit(*mysql) == 0) {
 
-			/* query result was ok, so break loop. */
-			break;
+				/* indicate that we fetch a result. */
+				found = 1;
+
+				/* query result was ok, so break loop. */
+				break;
+			}
 		}
+
+		/* rollback execution. */
+		mysql_rollback(*mysql);
 	}
 
 	/* check if no query was executed successfully, very bad :) */
@@ -407,7 +418,7 @@ int32_t pppd__chap_verify_mysql(char *name, char *ourname, int id, struct chap_d
 					if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
 
 						/* check if database update was successful. */
-						if (pppd__mysql_status(&mysql, username, 1) == 0) {
+						if (pppd__mysql_status(&mysql, name, 1) == 0) {
 
 							/* store username for ip down configuration. */
 							strncpy(username, name, MAXNAMELEN);
@@ -479,7 +490,7 @@ int32_t pppd__pap_auth_mysql(char *user, char *passwd, char **msgp, struct wordl
 				if (pppd__verify_password(passwd, secret_name, pppd_mysql_pass_encryption, pppd_mysql_pass_key) == 0) {
 
 					/* check if database update was successful. */
-					if (pppd__mysql_status(&mysql, username, 1) == 0) {
+					if (pppd__mysql_status(&mysql, user, 1) == 0) {
 
 						/* store username for ip down configuration. */
 						strncpy(username, user, MAXNAMELEN);

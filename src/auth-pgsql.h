@@ -38,6 +38,12 @@ int32_t pppd__pgsql_parameter(
 	void
 );
 
+/* this function begin or end a transaction. */
+int32_t pppd__pgsql_transaction(
+	PGconn		*pgsql,
+	uint8_t		*transaction
+);
+
 /* this function connect to a postgresql database. */
 int32_t pppd__pgsql_connect(
 	PGconn		**pgsql

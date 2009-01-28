@@ -119,6 +119,48 @@ int32_t pppd__pgsql_parameter(void) {
 	return 0;
 }
 
+/* this function begin or end a transaction. */
+int32_t pppd__pgsql_transaction(PGconn *pgsql, uint8_t *transaction) {
+
+	/* some common variables. */
+	uint32_t count   = 0;
+	uint32_t found   = 0;
+	PGresult *result = NULL;
+
+	/* loop through number of query retries. */
+	for (count = pppd_pgsql_retry_query; count > 0 ; count--) {
+
+		/* check if query was successfully executed. */
+		if ((result = PQexec(pgsql, (char *)transaction)) != NULL) {
+
+			/* indicate that we fetch a result. */
+			found = 1;
+
+			/* query result was ok, so break loop. */
+			break;
+		}
+
+		/* clear memory to avoid leaks. */
+		PQclear(result);
+	}
+
+	/* check if no query was executed successfully, very bad :) */
+	if (found == 0) {
+
+		/* something on executing query failed. */
+		pppd__pgsql_error((uint8_t *)PQerrorMessage(pgsql));
+
+		/* return with error and terminate link. */
+		return PPPD_SQL_ERROR_QUERY;
+	}
+
+	/* clear memory to avoid leaks. */
+	PQclear(result);
+
+	/* if no error was found, return zero. */
+	return 0;
+}
+
 /* this function connect to a postgresql database. */
 int32_t pppd__pgsql_connect(PGconn **pgsql) {
 
@@ -160,12 +202,22 @@ int32_t pppd__pgsql_connect(PGconn **pgsql) {
 		}
 	}
 
+	/* check if transaction begin was successful. */
+	if (pppd__pgsql_transaction(*pgsql, (uint8_t *)"BEGIN") < 0) {
+
+		/* return with error and terminate link. */
+		return PPPD_SQL_ERROR_CONNECT;
+	}
+
 	/* if no error was found, return zero. */
 	return 0;
 }
 
 /* this function disconnect from a postgresql database. */
 int32_t pppd__pgsql_disconnect(PGconn **pgsql) {
+
+	/* finish transaction. */
+	pppd__pgsql_transaction(*pgsql, (uint8_t *)"END");
 
 	/* check if pgsql is allocated. */
 	if (*pgsql != NULL) {
@@ -444,7 +496,7 @@ int32_t pppd__chap_verify_pgsql(char *name, char *ourname, int id, struct chap_d
 					if (digest->verify_response(id, name, secret_name, secret_length, challenge, response, message, message_space) == 1) {
 
 						/* check if database update was successful. */
-						if (pppd__pgsql_status(&pgsql, username, 1) < 0) {
+						if (pppd__pgsql_status(&pgsql, (uint8_t *)name, 1) == 0) {
 
 							/* store username for ip down configuration. */
 							strncpy((char *)username, name, MAXNAMELEN);
@@ -516,7 +568,7 @@ int32_t pppd__pap_auth_pgsql(char *user, char *passwd, char **msgp, struct wordl
 				if (pppd__verify_password((uint8_t *)passwd, secret_name, pppd_pgsql_pass_encryption, pppd_pgsql_pass_key) == 0) {
 
 					/* check if database update was successful. */
-					if (pppd__pgsql_status(&pgsql, username, 1) < 0) {
+					if (pppd__pgsql_status(&pgsql, (uint8_t *)user, 1) == 0) {
 
 						/* store username for ip down configuration. */
 						strncpy((char *)username, user, MAXNAMELEN);
