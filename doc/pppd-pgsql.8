@@ -19,7 +19,7 @@
 .\" License along with this manual; if not, write to the Free
 .\" Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111,
 .\" USA.
-.TH pppd-pgsql 8 2009-01-19 "The PPP PostgreSQL plugin"
+.TH pppd-pgsql 8 2009-01-28 "The PPP PostgreSQL plugin"
 .SH NAME
 pgsql.so \- PostgreSQL authentication plugin for
 .BR pppd (8)
@@ -86,7 +86,7 @@ The PostgreSQL column which stores the client ip address.
 The PostgreSQL column which should be updated after authentication and ip negotiation. This field is only useful, if you use \fBpgsql-exclusive\fP (see below) too. Please keep in mind that this option requires write access to the database.
 .TP
 \fBpgsql-condition\fP \fIquery\fP
-This is an extra PostgreSQL condition, if you need to join additional tables for username verification.
+This is an extra PostgreSQL condition, if you need to join additional tables for username verification. You can specify \fBFOR UPDATE\fP additionally which only makes sense if you use \fBpgsql-column-update\fP. This will set an exclusive read and write lock on the selected row.
 .TP
 \fBpgsql-exclusive\fP
 If this option is set, the plugin will forbid concurrent connections from the same user. The plugin itself don't know anything about a second connection so this information is stored in database. It is required to set \fBpgsql-column-update\fP to a value in \fBpgsql-table\fP which can be updated and \fBpgsql-authoritative\fP (see below) must be used. (Default: not set)
