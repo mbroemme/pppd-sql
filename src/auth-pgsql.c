@@ -215,7 +215,7 @@ int32_t pppd__pgsql_connect(PGconn **pgsql) {
 /* this function disconnect from a postgresql database. */
 int32_t pppd__pgsql_disconnect(PGconn **pgsql) {
 
-	/* finish transaction. */
+	/* finish transaction. (ignore return code, because what should I do, stop the disconnect?) */
 	pppd__pgsql_transaction(*pgsql, (uint8_t *)"END");
 
 	/* check if pgsql is allocated. */
