@@ -345,7 +345,7 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 		}
 
 		/* check if we found password. */
-		if (strcmp((char *)field, (char *)pppd_pgsql_column_pass) == 0) {
+		if (count == 0) {
 
 			/* cleanup memory. */
 			memset(secret_name, 0, sizeof(secret_name));
@@ -356,7 +356,7 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 		}
 
 		/* check if we found client ip. */
-		if (strcmp((char *)field, (char *)pppd_pgsql_column_ip) == 0) {
+		if (count == 1) {
 
 			/* check if ip address was successfully converted into binary data. */
 			if (inet_aton((char *)row, (struct in_addr *) &client_ip) == 0) {

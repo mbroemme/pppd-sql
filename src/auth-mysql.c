@@ -277,7 +277,7 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 		row[count] = row[count] ? row[count] : "NULL";
 
 		/* check if we found password. */
-		if (strcmp(field->name, pppd_mysql_column_pass) == 0) {
+		if (count == 0) {
 
 			/* cleanup memory. */
 			memset(secret_name, 0, sizeof(secret_name));
@@ -288,7 +288,7 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 		}
 
 		/* check if we found client ip. */
-		if (strcmp(field->name, pppd_mysql_column_ip) == 0) {
+		if (count == 1) {
 
 			/* check if ip address was successfully converted into binary data. */
 			if (inet_aton(row[count], (struct in_addr *) &client_ip) == 0) {
