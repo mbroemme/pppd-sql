@@ -99,7 +99,7 @@ int32_t pppd__ip_down(
 int32_t pppd__verify_password(
 	uint8_t		*passwd,
 	uint8_t		*secret_name,
-	uint8_t		*encrpytion,
+	uint8_t		*encryption,
 	uint8_t		*key
 );
 
@@ -107,7 +107,7 @@ int32_t pppd__verify_password(
 int32_t pppd__decrypt_password(
 	uint8_t		*secret_name,
 	int32_t		*secret_length,
-	uint8_t		*encrpytion,
+	uint8_t		*encryption,
 	uint8_t		*key
 );
 

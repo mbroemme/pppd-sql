@@ -134,7 +134,7 @@ int32_t pppd__ip_down(uint8_t *username, uint8_t *program) {
 };
 
 /* this function verify the given password. */
-int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *encrpytion, uint8_t *key) {
+int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *encryption, uint8_t *key) {
 
 	/* some common variables. */
 	uint8_t passwd_aes[MAXSECRETLEN / 2];
@@ -154,7 +154,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	memset(passwd_crypt, 0, sizeof(passwd_crypt));
 
 	/* check if we use no algorithm. */
-	if (strcasecmp((char *)encrpytion, "NONE") == 0) {
+	if (strcasecmp((char *)encryption, "NONE") == 0) {
 
 		/* check if we found valid password. */
 		if (strcmp((char *)passwd, (char *)secret_name) != 0) {
@@ -165,7 +165,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	}
 
 	/* check if we use des crypt algorithm. */
-	if (strcasecmp((char *)encrpytion, "CRYPT") == 0) {
+	if (strcasecmp((char *)encryption, "CRYPT") == 0) {
 
 		/* check if secret from database is shorter than an expected crypt() result. */
 		if (strlen((char *)secret_name) < (SIZE_CRYPT * 2)) {
@@ -197,7 +197,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	}
 
 	/* check if we use md5 hashing algorithm. */
-	if (strcasecmp((char *)encrpytion, "MD5") == 0) {
+	if (strcasecmp((char *)encryption, "MD5") == 0) {
 
 		/* check if secret from database is shorter than an expected md5 hash. */
 		if (strlen((char *)secret_name) < (SIZE_MD5 * 2)) {
@@ -264,7 +264,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 	}
 
 	/* check if we use aes block cipher algorithm. */
-	if (strcasecmp((char *)encrpytion, "AES") == 0) {
+	if (strcasecmp((char *)encryption, "AES") == 0) {
 
 		/* check if secret from database is shorter than an expected minimum aes size. */
 		if (strlen((char *)secret_name) < (((strlen((char *)passwd) / 16) + 1) * 16)) {
@@ -359,7 +359,7 @@ int32_t pppd__verify_password(uint8_t *passwd, uint8_t *secret_name, uint8_t *en
 }
 
 /* this function decrypt the given password. */
-int32_t pppd__decrypt_password(uint8_t *secret_name, int32_t *secret_length, uint8_t *encrpytion, uint8_t *key) {
+int32_t pppd__decrypt_password(uint8_t *secret_name, int32_t *secret_length, uint8_t *encryption, uint8_t *key) {
 
 	/* some common variables. */
 	uint8_t passwd_aes[MAXSECRETLEN / 2];
@@ -370,16 +370,16 @@ int32_t pppd__decrypt_password(uint8_t *secret_name, int32_t *secret_length, uin
 	EVP_CIPHER_CTX ctx_aes;
 
 	/* check if we use no algorithm. */
-	if (strcasecmp((char *)encrpytion, "NONE") == 0 ||
-	    strcasecmp((char *)encrpytion, "CRYPT") == 0 ||
-	    strcasecmp((char *)encrpytion, "MD5") == 0) {
+	if (strcasecmp((char *)encryption, "NONE") == 0 ||
+	    strcasecmp((char *)encryption, "CRYPT") == 0 ||
+	    strcasecmp((char *)encryption, "MD5") == 0) {
 
 		/* no encryption or non-symmetric algorithm used. */
 		return 0;
 	}
 
 	/* check if we use aes block cipher algorithm. */
-	if (strcasecmp((char *)encrpytion, "AES") == 0) {
+	if (strcasecmp((char *)encryption, "AES") == 0) {
 
 		/* cleanup the static array. */
 		memset(passwd_aes, 0, sizeof(passwd_aes));
