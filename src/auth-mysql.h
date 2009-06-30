@@ -22,11 +22,6 @@
 #ifndef _AUTH_MYSQL_H
 #define _AUTH_MYSQL_H
 
-/* client ip address must be stored in global variable, because at IPCP time
- * we no longer know the username.
- */
-extern uint32_t client_ip;
-
 /* this function handles the mysql_error() result. */
 int32_t pppd__mysql_error(
 	uint32_t	error_code,

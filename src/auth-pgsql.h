@@ -22,11 +22,6 @@
 #ifndef _AUTH_PGSQL_H
 #define _AUTH_PGSQL_H
 
-/* client ip address must be stored in global variable, because at IPCP time
- * we no longer know the username.
- */
-extern uint32_t client_ip;
-
 /* this function handles the PQerrorMessage() result. */
 int32_t pppd__pgsql_error(
 	uint8_t		*error_message
