@@ -264,7 +264,7 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 	    pppd_pgsql_column_update != NULL) {
 
 		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
-		strncat(query, " FOR UPDATE", 1023);
+		strncat((char *)query, " FOR UPDATE", 1023);
 	}
 
 	/* loop through number of query retries. */
@@ -448,20 +448,14 @@ void pppd__pgsql_up(void *opaque, int32_t arg) {
 	/* check if we should execute a script. */
 	if (pppd_pgsql_ip_up != NULL) {
 
-		/* set default return value. */
-		script_status = 0;
-
 		/* execute script. */
-		pppd__ip_up(username, pppd_pgsql_ip_up);
+		if (pppd__ip_up(username, pppd_pgsql_ip_up) != 0) {
 
-		/* check if we should fail. */
-		if (pppd_pgsql_ip_up_fail == 1) {
-
-			/* check return code of script, */
-			if (script_status != 0) {
+			/* check if we should fail. */
+			if (pppd_pgsql_ip_up_fail == 1) {
 
 				/* show the error. */
-				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_PGSQL, pppd_pgsql_ip_up);
+				error("Plugin %s: Script '%s' returned with non-zero status\n", PLUGIN_NAME_PGSQL, pppd_pgsql_ip_up);
 
 				/* check if status should be updated. */
 				if (pppd_pgsql_exclusive     == 1 &&
@@ -495,20 +489,14 @@ void pppd__pgsql_down(void *opaque, int32_t arg) {
 	/* check if we should execute a script. */
 	if (pppd_pgsql_ip_down != NULL) {
 
-		/* set default return value. */
-		script_status = 0;
-
 		/* execute script. */
-		pppd__ip_down(username, pppd_pgsql_ip_down);
+		if (pppd__ip_down(username, pppd_pgsql_ip_down) != 0) {
 
-		/* check if we should fail. */
-		if (pppd_pgsql_ip_down_fail == 1) {
-
-			/* check return code of script, */
-			if (script_status != 0) {
+			/* check if we should fail. */
+			if (pppd_pgsql_ip_down_fail == 1) {
 
 				/* show the error. */
-				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_PGSQL, pppd_pgsql_ip_up);
+				error("Plugin %s: Script '%s' returned with non-zero status\n", PLUGIN_NAME_PGSQL, pppd_pgsql_ip_up);
 
 				/* die bitch die. */
 				die(1);

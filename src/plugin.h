@@ -52,14 +52,12 @@
 #define PPPD_SQL_ERROR_CONNECT		-4	/* none of the supplied sql servers are working. */
 #define PPPD_SQL_ERROR_QUERY		-5	/* the given sql query failed. */
 #define PPPD_SQL_ERROR_PASSWORD		-6	/* the given password is wrong. */
+#define PPPD_SQL_ERROR_SCRIPT		-7	/* the up or down script failed. (returned with non-zero exit code) */
 
 /* define constants. */
 #define SIZE_AES			16	/* the size of an AES128 result. */
 #define SIZE_MD5			16	/* the size of a MD5 hash. */
 #define SIZE_CRYPT			13	/* the size of the crypt() DES result. */
-
-/* store script exitstatus in global variable, because calling function returns only void. */
-extern int32_t script_status;
 
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
@@ -88,7 +86,7 @@ int32_t pppd__allowed_address(
 
 /* this function is called if scripts will return with non-zero status. */
 void pppd__status __P(
-	(void *)
+	(int32_t *)
 );
 
 /* this function will execute a script when IPCP comes up. */

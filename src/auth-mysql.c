@@ -370,20 +370,14 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_up != NULL) {
 
-		/* set default return value. */
-		script_status = 0;
-
 		/* execute script. */
-		pppd__ip_up(username, pppd_mysql_ip_up);
+		if (pppd__ip_up(username, pppd_mysql_ip_up) != 0) {
 
-		/* check if we should fail. */
-		if (pppd_mysql_ip_up_fail == 1) {
-
-			/* check return code of script, */
-			if (script_status != 0) {
+			/* check if we should fail. */
+			if (pppd_mysql_ip_up_fail == 1) {
 
 				/* show the error. */
-				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_MYSQL, pppd_mysql_ip_up);
+				error("Plugin %s: Script '%s' returned with non-zero status\n", PLUGIN_NAME_MYSQL, pppd_mysql_ip_up);
 
 				/* check if status should be updated. */
 				if (pppd_mysql_exclusive     == 1 &&
@@ -417,20 +411,14 @@ void pppd__mysql_down(void *opaque, int32_t arg) {
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_down != NULL) {
 
-		/* set default return value. */
-		script_status = 0;
-
 		/* execute script. */
-		pppd__ip_down(username, pppd_mysql_ip_down);
+		if (pppd__ip_down(username, pppd_mysql_ip_down) != 0) {
 
-		/* check if we should fail. */
-		if (pppd_mysql_ip_down_fail == 1) {
-
-			/* check return code of script, */
-			if (script_status != 0) {
+			/* check if we should fail. */
+			if (pppd_mysql_ip_down_fail == 1) {
 
 				/* show the error. */
-				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_MYSQL, pppd_mysql_ip_up);
+				error("Plugin %s: Script '%s' returned with non-zero status\n", PLUGIN_NAME_MYSQL, pppd_mysql_ip_up);
 
 				/* die bitch die. */
 				die(1);

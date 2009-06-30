@@ -25,9 +25,6 @@
 /* generic includes. */
 #include <string.h>
 
-/* store script exitstatus in global variable, because calling function returns only void. */
-int32_t script_status;
-
 /* this function set whether the peer must authenticate itself to us via CHAP. */
 int32_t pppd__chap_check(void) {
 
@@ -64,10 +61,10 @@ int32_t pppd__allowed_address(uint32_t addr) {
 }
 
 /* this function is called if scripts will return with non-zero status. */
-void pppd__status(arg) void *arg; {
+void pppd__status(arg) int32_t *arg; {
 
 	/* set the return value to failed. */
-	script_status = 1;
+	*arg = PPPD_SQL_ERROR_SCRIPT;
 }
 
 /* this function will execute a script when IPCP comes up. */
@@ -78,6 +75,7 @@ int32_t pppd__ip_up(uint8_t *username, uint8_t *program) {
 	uint8_t strlocal[32];
 	uint8_t strremote[32];
 	uint8_t *argv[9];
+	int32_t script_status = 0;
 
 	/* create the parameters. */
 	slprintf((char *)strspeed, sizeof(strspeed), "%d", baud_rate);
@@ -96,10 +94,10 @@ int32_t pppd__ip_up(uint8_t *username, uint8_t *program) {
 	argv[8] = NULL;
 
 	/* execute script. */
-	run_program((char *)program, (char **)argv, 0, pppd__status, NULL, 1);
+	run_program((char *)program, (char **)argv, 0, (void *)pppd__status, &script_status, 1);
 
 	/* if no error was found, return zero. */
-	return 0;
+	return script_status;
 };
 
 /* this function will execute a script when IPCP goes down. */
@@ -113,6 +111,7 @@ int32_t pppd__ip_down(uint8_t *username, uint8_t *program) {
 	uint8_t str_bytes_transmitted[32];
 	uint8_t str_duration[32];
 	uint8_t *argv[12];
+	int32_t script_status = 0;
 
 	/* create the parameters. */
 	slprintf((char *)str_speed, sizeof(str_speed), "%d", baud_rate);
@@ -137,10 +136,10 @@ int32_t pppd__ip_down(uint8_t *username, uint8_t *program) {
 	argv[11] = NULL;
 
 	/* execute script. */
-	run_program((char *)program, (char **)argv, 0, pppd__status, NULL, 1);
+	run_program((char *)program, (char **)argv, 0, (void *)pppd__status, &script_status, 1);
 
 	/* if no error was found, return zero. */
-	return 0;
+	return script_status;
 };
 
 /* this function verify the given password. */
