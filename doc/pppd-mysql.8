@@ -84,7 +84,7 @@ The MySQL column which stores the client ip address.
 The MySQL column which should be updated after authentication and ip negotiation. This field is only useful, if you use \fBmysql-exclusive\fP (see below) too. Please keep in mind that this option requires write access to the database.
 .TP
 \fBmysql-condition\fP \fIquery\fP
-This is an extra MySQL condition, if you need to join additional tables for username verification. The condition has to be valid for the read and write queries. (Default: not set)
+This is an extra MySQL condition, if you need to join additional tables for username verification. The condition has to be valid for the read queries. (Default: not set)
 .TP
 \fBmysql-exclusive\fP
 If this option is set, the plugin will forbid concurrent connections from the same user. The plugin itself don't know anything about a second connection so this information is stored in database. It is required to set \fBmysql-column-update\fP to a value in \fBmysql-table\fP which can be updated and \fBmysql-authoritative\fP (see below) must be used. (Default: not set)

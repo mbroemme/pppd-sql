@@ -320,25 +320,11 @@ int32_t pppd__mysql_status(MYSQL **mysql, uint8_t *name, uint32_t status) {
 
 	/* some common variables. */
 	uint8_t query[1024];
-	uint8_t query_extended[1024];
 	uint32_t count = 0;
 	uint32_t found = 0;
 
 	/* build query for database. */
 	snprintf(query, 1024, "UPDATE %s SET %s='%d' WHERE %s='%s'", pppd_mysql_table, pppd_mysql_column_update, status, pppd_mysql_column_user, name);
-
-	/* check if we have an additional mysql condition. */
-	if (pppd_mysql_condition != NULL) {
-
-		/* build extended query for database. */
-		snprintf(query_extended, 1024, " AND %s", pppd_mysql_condition);
-
-		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
-		strncat(query, query_extended, 1023);
-
-		/* clear the memory with the extended query, to build next one if required. */
-		memset(query_extended, 0, sizeof(query_extended));
-	}
 
 	/* loop through number of query retries. */
 	for (count = pppd_mysql_retry_query; count > 0 ; count--) {
