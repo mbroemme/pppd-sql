@@ -58,6 +58,9 @@
 #define SIZE_MD5			16	/* the size of a MD5 hash. */
 #define SIZE_CRYPT			13	/* the size of the crypt() DES result. */
 
+/* store script exitstatus in global variable, because calling function returns only void. */
+extern int32_t script_status;
+
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
  */
@@ -81,6 +84,11 @@ void pppd__ip_choose(
 /* this function set whether the plugin is allowed to set client ip addresses. */
 int32_t pppd__allowed_address(
 	uint32_t	addr
+);
+
+/* this function is called if scripts will return with non-zero status. */
+void pppd__status __P(
+	(void *)
 );
 
 /* this function will execute a script when IPCP comes up. */

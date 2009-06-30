@@ -60,6 +60,13 @@ int32_t pppd__allowed_address(uint32_t addr) {
 	return 1;
 }
 
+/* this function is called if scripts will return with non-zero status. */
+void pppd__status(arg) void *arg; {
+
+	/* set the return value to failed. */
+	script_status = 1;
+}
+
 /* this function will execute a script when IPCP comes up. */
 int32_t pppd__ip_up(uint8_t *username, uint8_t *program) {
 
@@ -86,7 +93,7 @@ int32_t pppd__ip_up(uint8_t *username, uint8_t *program) {
 	argv[8] = NULL;
 
 	/* execute script. */
-	run_program((char *)program, (char **)argv, 0, NULL, NULL, 1);
+	run_program((char *)program, (char **)argv, 0, pppd__status, NULL, 1);
 
 	/* if no error was found, return zero. */
 	return 0;
@@ -127,7 +134,7 @@ int32_t pppd__ip_down(uint8_t *username, uint8_t *program) {
 	argv[11] = NULL;
 
 	/* execute script. */
-	run_program((char *)program, (char **)argv, 0, NULL, NULL, 1);
+	run_program((char *)program, (char **)argv, 0, pppd__status, NULL, 1);
 
 	/* if no error was found, return zero. */
 	return 0;

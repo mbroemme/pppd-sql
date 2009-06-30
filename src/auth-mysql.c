@@ -358,6 +358,9 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_up != NULL) {
 
+		/* set default return value. */
+		script_status = 0;
+
 		/* execute script. */
 		pppd__ip_up(username, pppd_mysql_ip_up);
 	}
@@ -371,6 +374,9 @@ void pppd__mysql_down(void *opaque, int32_t arg) {
 
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_down != NULL) {
+
+		/* set default return value. */
+		script_status = 0;
 
 		/* execute script. */
 		pppd__ip_down(username, pppd_mysql_ip_down);
