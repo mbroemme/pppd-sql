@@ -75,7 +75,7 @@ int32_t pppd__pgsql_parameter(void) {
 	    pppd_pgsql_table		== NULL ||
 	    pppd_pgsql_column_user	== NULL ||
 	    pppd_pgsql_column_pass	== NULL ||
-	    pppd_pgsql_column_ip	== NULL) {
+	    pppd_pgsql_column_client_ip	== NULL) {
 
 		/* something failed on postgresql initialization. */
 		error("Plugin %s: PostgreSQL information are not complete\n", PLUGIN_NAME_PGSQL);
@@ -243,7 +243,7 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 	PGresult *result = NULL;
 
 	/* build query for database. */
-	snprintf((char *)query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_pgsql_column_pass, pppd_pgsql_column_ip, pppd_pgsql_table, pppd_pgsql_column_user, name);
+	snprintf((char *)query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_pgsql_column_pass, pppd_pgsql_column_client_ip, pppd_pgsql_table, pppd_pgsql_column_user, name);
 
 	/* check if we have an additional postgresql condition. */
 	if (pppd_pgsql_condition != NULL) {

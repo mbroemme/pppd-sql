@@ -56,7 +56,7 @@ int32_t pppd__mysql_parameter(void) {
 	    pppd_mysql_table		== NULL ||
 	    pppd_mysql_column_user	== NULL ||
 	    pppd_mysql_column_pass	== NULL ||
-	    pppd_mysql_column_ip	== NULL) {
+	    pppd_mysql_column_client_ip	== NULL) {
 
 		/* something failed on mysql initialization. */
 		error("Plugin %s: MySQL information are not complete\n", PLUGIN_NAME_MYSQL);
@@ -184,7 +184,7 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 	MYSQL_FIELD *field = NULL;
 
 	/* build query for database. */
-	snprintf(query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_mysql_column_pass, pppd_mysql_column_ip, pppd_mysql_table, pppd_mysql_column_user, name);
+	snprintf(query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_mysql_column_pass, pppd_mysql_column_client_ip, pppd_mysql_table, pppd_mysql_column_user, name);
 
 	/* check if we have an additional mysql condition. */
 	if (pppd_mysql_condition != NULL) {
