@@ -108,10 +108,16 @@ The MySQL connection retry limit, if connection failed it will be retried as oft
 The MySQL query retry limit, if query failed (maybe the table or row is locked) it will be retried as often as in \fIretries\fP specified. (Default: 5)
 .TP
 \fBmysql-ip-up\fP \fI/etc/ppp/ip-up-mysql\fP
-If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-up-mysql\fP when IPCP has come up after setting the login status inside database. The difference with the PPP internal version is, that this version adds the username as additional parameter and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
+If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-up-mysql\fP when IPCP has come up after setting the login status inside database. The difference with the PPP internal version is, that this version adds the username as additional parameter and blocks the execution of the PPP daemon until the script returns. (Default: not set)
+.TP
+\fBmysql-ip-up-fail\fP
+If this option is set, the exit code of the script is evaluated and if it is non-zero, the link will be terminated. If \fBmysql-exclusive\fP, \fBmysql-authoritative\fP and \fBmysql-column-update\fP are set, the login status inside database was changed due to successful authentication and IPCP negotiation. It will be reverted if these options are set. (Default: not set)
 .TP
 \fBmysql-ip-down\fP \fI/etc/ppp/ip-down-mysql\fP
-If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-down-mysql\fP when IPCP goes down before setting the login status inside database. The difference with the PPP internal version is, that this version adds the username, received bytes, transmitted bytes and link duration as additional parameters and blocks the execution of the PPP daemon until the script returns. It does not evaluate the exit code. (Default: not set)
+If this option is set, the plugin will execute the given script \fI/etc/ppp/ip-down-mysql\fP when IPCP goes down before setting the login status inside database. The difference with the PPP internal version is, that this version adds the username, received bytes, transmitted bytes and link duration as additional parameters and blocks the execution of the PPP daemon until the script returns. (Default: not set)
+.TP
+\fBmysql-ip-down-fail\fP
+If this option is set, the exit code of the script is evaluated and if it is non-zero, the link will be terminated. Due to the fact, that the database is touched after successful execution of the script, nothing will happen to it. (Default: not set)
 .SH SEE ALSO
 .BR pppd (8)
 .SH AUTHOR
