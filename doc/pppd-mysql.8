@@ -17,7 +17,7 @@
 .\"
 .\" You should have received a copy of the GNU General Public License
 .\" along with this program.  If not, see <http://www.gnu.org/licenses/>.
-.TH pppd-mysql 8 2009-01-28 "The PPP MySQL plugin"
+.TH pppd-mysql 8 2009-06-30 "The PPP MySQL plugin"
 .SH NAME
 mysql.so \- MySQL authentication plugin for
 .BR pppd (8)
@@ -84,7 +84,7 @@ The MySQL column which stores the client ip address.
 The MySQL column which should be updated after authentication and ip negotiation. This field is only useful, if you use \fBmysql-exclusive\fP (see below) too. Please keep in mind that this option requires write access to the database.
 .TP
 \fBmysql-condition\fP \fIquery\fP
-This is an extra MySQL condition, if you need to join additional tables for username verification. You can specify \fBFOR UPDATE\fP additionally which only makes sense if you use \fBmysql-column-update\fP. This will set an exclusive read and write lock on the selected row.
+This is an extra MySQL condition, if you need to join additional tables for username verification. The condition has to be valid for the read and write queries. (Default: not set)
 .TP
 \fBmysql-exclusive\fP
 If this option is set, the plugin will forbid concurrent connections from the same user. The plugin itself don't know anything about a second connection so this information is stored in database. It is required to set \fBmysql-column-update\fP to a value in \fBmysql-table\fP which can be updated and \fBmysql-authoritative\fP (see below) must be used. (Default: not set)

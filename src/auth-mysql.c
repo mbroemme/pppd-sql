@@ -199,6 +199,15 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 		memset(query_extended, 0, sizeof(query_extended));
 	}
 
+	/* check if we should set an exclusive read lock. */
+	if (pppd_mysql_exclusive     == 1 &&
+	    pppd_mysql_authoritative == 1 &&
+	    pppd_mysql_column_update != NULL) {
+
+		/* only write 1023 bytes, because strncat writes 1023 bytes plus the terminating null byte. */
+		strncat(query, " FOR UPDATE", 1023);
+	}
+
 	/* loop through number of query retries. */
 	for (count = pppd_mysql_retry_query; count > 0 ; count--) {
 
