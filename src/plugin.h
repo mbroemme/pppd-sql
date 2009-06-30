@@ -30,7 +30,10 @@
 #endif
 
 /* generic includes. */
+#include <errno.h>
 #include <stdint.h>
+#include <string.h>
+#include <sys/wait.h>
 
 /* ppp generic includes. */
 #include <pppd/chap-new.h>
@@ -82,11 +85,6 @@ void pppd__ip_choose(
 /* this function set whether the plugin is allowed to set client ip addresses. */
 int32_t pppd__allowed_address(
 	uint32_t	addr
-);
-
-/* this function is called if scripts will return with non-zero status. */
-void pppd__status __P(
-	(int32_t *)
 );
 
 /* this function will execute a script when IPCP comes up. */
