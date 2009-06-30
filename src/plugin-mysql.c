@@ -40,6 +40,7 @@ uint8_t *pppd_mysql_table		= NULL;
 uint8_t *pppd_mysql_column_user		= NULL;
 uint8_t *pppd_mysql_column_pass		= NULL;
 uint8_t *pppd_mysql_column_client_ip	= NULL;
+uint8_t *pppd_mysql_column_server_ip	= NULL;
 uint8_t *pppd_mysql_column_update	= NULL;
 uint8_t *pppd_mysql_condition		= NULL;
 uint32_t pppd_mysql_exclusive		= 0;
@@ -54,10 +55,11 @@ uint32_t pppd_mysql_ip_up_fail		= 0;
 uint8_t *pppd_mysql_ip_down		= NULL;
 uint32_t pppd_mysql_ip_down_fail	= 0;
 
-/* client ip address must be stored in global variable, because at IPCP time
- * we no longer know the username.
+/* client and server ip address must be stored in global variable, because
+ * at IPCP time we no longer know the username.
  */
 uint32_t client_ip			= 0;
+uint32_t server_ip			= 0;
 
 /* extra option structure. */
 option_t options[] = {
@@ -72,6 +74,7 @@ option_t options[] = {
 	{ "mysql-column-user", o_string, &pppd_mysql_column_user, "Set MySQL username field" },
 	{ "mysql-column-pass", o_string, &pppd_mysql_column_pass, "Set MySQL password field" },
 	{ "mysql-column-client-ip", o_string, &pppd_mysql_column_client_ip, "Set MySQL client ip address field" },
+	{ "mysql-column-server-ip", o_string, &pppd_mysql_column_server_ip, "Set MySQL server ip address field" },
 	{ "mysql-column-update", o_string, &pppd_mysql_column_update, "Set MySQL update field" },
 	{ "mysql-condition", o_string, &pppd_mysql_condition, "Set MySQL condition clause" },
 	{ "mysql-exclusive", o_bool, &pppd_mysql_exclusive, "Set MySQL to forbid concurrent connection from one user", 0 | 1 },

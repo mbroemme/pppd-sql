@@ -40,6 +40,7 @@ uint8_t *pppd_pgsql_table		= NULL;
 uint8_t *pppd_pgsql_column_user		= NULL;
 uint8_t *pppd_pgsql_column_pass		= NULL;
 uint8_t *pppd_pgsql_column_client_ip	= NULL;
+uint8_t *pppd_pgsql_column_server_ip	= NULL;
 uint8_t *pppd_pgsql_column_update	= NULL;
 uint8_t *pppd_pgsql_condition		= NULL;
 uint32_t pppd_pgsql_exclusive		= 0;
@@ -54,10 +55,11 @@ uint32_t pppd_pgsql_ip_up_fail		= 0;
 uint8_t *pppd_pgsql_ip_down		= NULL;
 uint32_t pppd_pgsql_ip_down_fail	= 0;
 
-/* client ip address must be stored in global variable, because at IPCP time
- * we no longer know the username.
+/* client and server ip address must be stored in global variable, because
+ * at IPCP time we no longer know the username.
  */
 uint32_t client_ip			= 0;
+uint32_t server_ip			= 0;
 
 /* extra option structure. */
 option_t options[] = {
@@ -72,6 +74,7 @@ option_t options[] = {
 	{ "pgsql-column-user", o_string, &pppd_pgsql_column_user, "Set PostgreSQL username field" },
 	{ "pgsql-column-pass", o_string, &pppd_pgsql_column_pass, "Set PostgreSQL password field" },
 	{ "pgsql-column-client-ip", o_string, &pppd_pgsql_column_client_ip, "Set PostgreSQL client ip address field" },
+	{ "pgsql-column-server-ip", o_string, &pppd_pgsql_column_server_ip, "Set PostgreSQL server ip address field" },
 	{ "pgsql-column-update", o_string, &pppd_pgsql_column_update, "Set PostgreSQL update field" },
 	{ "pgsql-condition", o_string, &pppd_pgsql_condition, "Set PostgreSQL condition clause" },
 	{ "pgsql-exclusive", o_bool, &pppd_pgsql_exclusive, "Set PostgreSQL to forbid concurrent connection from one user", 0 | 1 },

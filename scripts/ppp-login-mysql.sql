@@ -34,6 +34,7 @@ CREATE TABLE `login` (
   `password` varchar(32) NOT NULL,
   `status` int(11) NOT NULL default '0',
   `clientip` varchar(15) NOT NULL,
+  `serverip` varchar(15) NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

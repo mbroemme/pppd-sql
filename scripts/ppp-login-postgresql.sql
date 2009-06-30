@@ -64,7 +64,8 @@ CREATE TABLE "login" (
     username character varying(16) NOT NULL,
     "password" character varying(32) NOT NULL,
     status integer DEFAULT 0 NOT NULL,
-    clientip character varying(15) NOT NULL
+    clientip character varying(15) NOT NULL,
+    serverip character varying(15) NOT NULL
 );
 
 
@@ -74,7 +75,7 @@ ALTER TABLE public."login" OWNER TO postgres;
 -- Data for Name: login; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY "login" (id, username, "password", status, clientip) FROM stdin;
+COPY "login" (id, username, "password", status, clientip, serverip) FROM stdin;
 \.
 
 

@@ -62,10 +62,11 @@
 #define SIZE_MD5			16	/* the size of a MD5 hash. */
 #define SIZE_CRYPT			13	/* the size of the crypt() DES result. */
 
-/* client ip address must be stored in global variable, because at IPCP time
- * we no longer know the username.
+/* client and server ip address must be stored in global variable, because
+ * at IPCP time we no longer know the username.
  */
 extern uint32_t client_ip;
+extern uint32_t server_ip;
 
 /* this function set whether the peer must authenticate itself to us via CHAP. */
 int32_t pppd__chap_check(

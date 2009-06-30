@@ -56,7 +56,8 @@ int32_t pppd__mysql_parameter(void) {
 	    pppd_mysql_table		== NULL ||
 	    pppd_mysql_column_user	== NULL ||
 	    pppd_mysql_column_pass	== NULL ||
-	    pppd_mysql_column_client_ip	== NULL) {
+	    pppd_mysql_column_client_ip	== NULL ||
+	    pppd_mysql_column_server_ip	== NULL) {
 
 		/* something failed on mysql initialization. */
 		error("Plugin %s: MySQL information are not complete\n", PLUGIN_NAME_MYSQL);
@@ -184,7 +185,7 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 	MYSQL_FIELD *field = NULL;
 
 	/* build query for database. */
-	snprintf(query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_mysql_column_pass, pppd_mysql_column_client_ip, pppd_mysql_table, pppd_mysql_column_user, name);
+	snprintf(query, 1024, "SELECT %s, %s, %s FROM %s WHERE %s='%s'", pppd_mysql_column_pass, pppd_mysql_column_client_ip, pppd_mysql_column_server_ip, pppd_mysql_table, pppd_mysql_column_user, name);
 
 	/* check if we have an additional mysql condition. */
 	if (pppd_mysql_condition != NULL) {
@@ -303,7 +304,21 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 			if (inet_aton(row[count], (struct in_addr *) &client_ip) == 0) {
 
 				/* error on converting ip address.*/
-				error("Plugin %s: IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
+				error("Plugin %s: Client IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_QUERY;
+			}
+		}
+
+		/* check if we found server ip. */
+		if (count == 2) {
+
+			/* check if ip address was successfully converted into binary data. */
+			if (inet_aton(row[count], (struct in_addr *) &server_ip) == 0) {
+
+				/* error on converting ip address.*/
+				error("Plugin %s: Server IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
 
 				/* return with error and terminate link. */
 				return PPPD_SQL_ERROR_QUERY;

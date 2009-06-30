@@ -41,6 +41,9 @@ void pppd__ip_choose(uint32_t *addrp) {
 
 	/* set ip address to client one fetched from database. */
 	*addrp = client_ip;
+
+	/* set ip address to server one fetched from database. */
+	ipcp_gotoptions[0].ouraddr = server_ip;
 }
 
 /* this function set whether the plugin is allowed to set client ip addresses. */

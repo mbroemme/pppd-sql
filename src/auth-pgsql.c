@@ -75,7 +75,8 @@ int32_t pppd__pgsql_parameter(void) {
 	    pppd_pgsql_table		== NULL ||
 	    pppd_pgsql_column_user	== NULL ||
 	    pppd_pgsql_column_pass	== NULL ||
-	    pppd_pgsql_column_client_ip	== NULL) {
+	    pppd_pgsql_column_client_ip	== NULL ||
+	    pppd_pgsql_column_server_ip	== NULL) {
 
 		/* something failed on postgresql initialization. */
 		error("Plugin %s: PostgreSQL information are not complete\n", PLUGIN_NAME_PGSQL);
@@ -243,7 +244,7 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 	PGresult *result = NULL;
 
 	/* build query for database. */
-	snprintf((char *)query, 1024, "SELECT %s, %s FROM %s WHERE %s='%s'", pppd_pgsql_column_pass, pppd_pgsql_column_client_ip, pppd_pgsql_table, pppd_pgsql_column_user, name);
+	snprintf((char *)query, 1024, "SELECT %s, %s, %s FROM %s WHERE %s='%s'", pppd_pgsql_column_pass, pppd_pgsql_column_client_ip, pppd_pgsql_column_server_ip, pppd_pgsql_table, pppd_pgsql_column_user, name);
 
 	/* check if we have an additional postgresql condition. */
 	if (pppd_pgsql_condition != NULL) {
@@ -371,7 +372,24 @@ int32_t pppd__pgsql_password(PGconn **pgsql, uint8_t *name, uint8_t *secret_name
 			if (inet_aton((char *)row, (struct in_addr *) &client_ip) == 0) {
 
 				/* error on converting ip address.*/
-				error("Plugin %s: IP address %s is not valid\n", PLUGIN_NAME_PGSQL, row);
+				error("Plugin %s: Client IP address %s is not valid\n", PLUGIN_NAME_PGSQL, row);
+
+				/* clear memory to avoid leaks. */
+				PQclear(result);
+
+				/* return with error and terminate link. */
+				return PPPD_SQL_ERROR_QUERY;
+			}
+		}
+
+		/* check if we found server ip. */
+		if (count == 2) {
+
+			/* check if ip address was successfully converted into binary data. */
+			if (inet_aton((char *)row, (struct in_addr *) &server_ip) == 0) {
+
+				/* error on converting ip address.*/
+				error("Plugin %s: Server IP address %s is not valid\n", PLUGIN_NAME_PGSQL, row);
 
 				/* clear memory to avoid leaks. */
 				PQclear(result);

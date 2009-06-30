@@ -47,6 +47,7 @@ extern uint8_t *pppd_mysql_table;
 extern uint8_t *pppd_mysql_column_user;
 extern uint8_t *pppd_mysql_column_pass;
 extern uint8_t *pppd_mysql_column_client_ip;
+extern uint8_t *pppd_mysql_column_server_ip;
 extern uint8_t *pppd_mysql_column_update;
 extern uint8_t *pppd_mysql_condition;
 extern uint32_t pppd_mysql_exclusive;
