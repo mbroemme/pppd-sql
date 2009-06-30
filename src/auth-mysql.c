@@ -355,6 +355,9 @@ int32_t pppd__mysql_status(MYSQL **mysql, uint8_t *name, uint32_t status) {
 /* this function is the ip up notifier for the ppp daemon. */
 void pppd__mysql_up(void *opaque, int32_t arg) {
 
+	/* some common variables. */
+	MYSQL *mysql = NULL;
+
 	/* check if we should execute a script. */
 	if (pppd_mysql_ip_up != NULL) {
 
@@ -363,6 +366,36 @@ void pppd__mysql_up(void *opaque, int32_t arg) {
 
 		/* execute script. */
 		pppd__ip_up(username, pppd_mysql_ip_up);
+
+		/* check if we should fail. */
+		if (pppd_mysql_ip_up_fail == 1) {
+
+			/* check return code of script, */
+			if (script_status != 0) {
+
+				/* show the error. */
+				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_MYSQL, pppd_mysql_ip_up);
+
+				/* check if status should be updated. */
+				if (pppd_mysql_exclusive     == 1 &&
+				    pppd_mysql_authoritative == 1 &&
+				    pppd_mysql_column_update != NULL) {
+
+					/* check if mysql connect is working. */
+					if (pppd__mysql_connect(&mysql) == 0) {
+
+						/* update database. (ignore return code, because what should I do, stop the disconnect?) */
+						pppd__mysql_status(&mysql, username, 0);
+
+						/* disconnect from mysql. */
+						pppd__mysql_disconnect(&mysql);
+					}
+				}
+
+				/* die bitch die. */
+				die(1);
+			}
+		}
 	}
 }
 
@@ -380,6 +413,20 @@ void pppd__mysql_down(void *opaque, int32_t arg) {
 
 		/* execute script. */
 		pppd__ip_down(username, pppd_mysql_ip_down);
+
+		/* check if we should fail. */
+		if (pppd_mysql_ip_down_fail == 1) {
+
+			/* check return code of script, */
+			if (script_status != 0) {
+
+				/* show the error. */
+				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_MYSQL, pppd_mysql_ip_up);
+
+				/* die bitch die. */
+				die(1);
+			}
+		}
 	}
 
 	/* check if status should be updated. */

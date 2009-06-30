@@ -50,7 +50,9 @@ uint32_t pppd_mysql_connect_timeout	= 5;
 uint32_t pppd_mysql_retry_connect	= 5;
 uint32_t pppd_mysql_retry_query		= 5;
 uint8_t *pppd_mysql_ip_up		= NULL;
+uint32_t pppd_mysql_ip_up_fail		= 0;
 uint8_t *pppd_mysql_ip_down		= NULL;
+uint32_t pppd_mysql_ip_down_fail	= 0;
 
 /* client ip address must be stored in global variable, because at IPCP time
  * we no longer know the username.
@@ -80,7 +82,9 @@ option_t options[] = {
 	{ "mysql-retry-connect", o_int, &pppd_mysql_retry_connect, "Set MySQL connection retries" },
 	{ "mysql-retry-query", o_int, &pppd_mysql_retry_query, "Set MySQL query retries" },
 	{ "mysql-ip-up", o_string, &pppd_mysql_ip_up, "Set MySQL script to execute when IPCP has come up" },
+	{ "mysql-ip-up-fail", o_bool, &pppd_mysql_ip_up_fail, "Set MySQL IPCP up script to terminate link on unsuccessful execution", 0 | 1 },
 	{ "mysql-ip-down", o_string, &pppd_mysql_ip_down, "Set MySQL script to execute when IPCP goes down" },
+	{ "mysql-ip-down-fail", o_bool, &pppd_mysql_ip_down_fail, "Set MySQL IPCP down script to terminate link on unsuccessful execution", 0 | 1 },
 	{ NULL }
 };
 

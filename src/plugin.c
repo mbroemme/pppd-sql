@@ -25,6 +25,9 @@
 /* generic includes. */
 #include <string.h>
 
+/* store script exitstatus in global variable, because calling function returns only void. */
+int32_t script_status;
+
 /* this function set whether the peer must authenticate itself to us via CHAP. */
 int32_t pppd__chap_check(void) {
 

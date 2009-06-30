@@ -57,7 +57,9 @@ extern uint32_t pppd_pgsql_connect_timeout;
 extern uint32_t pppd_pgsql_retry_connect;
 extern uint32_t pppd_pgsql_retry_query;
 extern uint8_t *pppd_pgsql_ip_up;
+extern uint32_t pppd_pgsql_ip_up_fail;
 extern uint8_t *pppd_pgsql_ip_down;
+extern uint32_t pppd_pgsql_ip_down_fail;
 
 /* extra option structure. */
 extern option_t options[];

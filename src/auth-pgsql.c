@@ -433,6 +433,9 @@ int32_t pppd__pgsql_status(PGconn **pgsql, uint8_t *name, uint32_t status) {
 /* this function is the ip up notifier for the ppp daemon. */
 void pppd__pgsql_up(void *opaque, int32_t arg) {
 
+	/* some common variables. */
+	PGconn *pgsql = NULL;
+
 	/* check if we should execute a script. */
 	if (pppd_pgsql_ip_up != NULL) {
 
@@ -441,6 +444,36 @@ void pppd__pgsql_up(void *opaque, int32_t arg) {
 
 		/* execute script. */
 		pppd__ip_up(username, pppd_pgsql_ip_up);
+
+		/* check if we should fail. */
+		if (pppd_pgsql_ip_up_fail == 1) {
+
+			/* check return code of script, */
+			if (script_status != 0) {
+
+				/* show the error. */
+				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_PGSQL, pppd_pgsql_ip_up);
+
+				/* check if status should be updated. */
+				if (pppd_pgsql_exclusive     == 1 &&
+				    pppd_pgsql_authoritative == 1 &&
+				    pppd_pgsql_column_update != NULL) {
+
+					/* check if postgresql connect is working. */
+					if (pppd__pgsql_connect(&pgsql) == 0) {
+
+						/* update database. (ignore return code, because what should I do, stop the disconnect?) */
+						pppd__pgsql_status(&pgsql, username, 0);
+
+						/* disconnect from pgsql. */
+						pppd__pgsql_disconnect(&pgsql);
+					}
+				}
+
+				/* die bitch die. */
+				die(1);
+			}
+		}
 	}
 }
 
@@ -458,6 +491,20 @@ void pppd__pgsql_down(void *opaque, int32_t arg) {
 
 		/* execute script. */
 		pppd__ip_down(username, pppd_pgsql_ip_down);
+
+		/* check if we should fail. */
+		if (pppd_pgsql_ip_down_fail == 1) {
+
+			/* check return code of script, */
+			if (script_status != 0) {
+
+				/* show the error. */
+				error("Plugin %s: Executing script '%s' failed\n", PLUGIN_NAME_PGSQL, pppd_pgsql_ip_up);
+
+				/* die bitch die. */
+				die(1);
+			}
+		}
 	}
 
 	/* check if status should be updated. */
