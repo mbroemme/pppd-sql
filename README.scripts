@@ -19,9 +19,32 @@ encoding.
     - File     = ppp-login-postgresql.sql
     - Command  = psql -U root -d postgres -f ppp-login-postgresql.sql
 
-The result will be in every case a database with the name 'ppp' and a
-table 'login' with five fields. The first field is an auto increment
-identifier, the second is the username, third is the password, fourth
-is the status of the connection (only used if *-update-column and
-*-exclusive option is set) and fifth field is the ip address which
-should be assigned after ip negotiation.
+The result will be a database with the name 'ppp' and one table 'login'.
+
+  * login
+    - id
+      contains auto increment value.
+    - username
+      contains the username of the tunnel client.
+    - password
+      contains the password of the tunnel client.
+    - status
+      contains the login status of the client.
+    - clientip
+      contains the client ip address for the connection.
+    - serverip
+      contains the server ip address for the connection.
+
+Which permissions are required for the SQL User?
+================================================
+
+The list below includes a bunch of commands which should be executed at
+the SQL-Server to give the user the required privileges.
+
+  * MySQL
+    - GRANT SELECT, UPDATE ON
+        ppp.login TO '<username>'@'<ip>' IDENTIFIED BY '<password>'
+
+  * PostgreSQL
+    - CREATE USER '<username>' WITH PASSWORD '<password>'
+    - GRANT SELECT, UPDATE ON login TO '<username>'
