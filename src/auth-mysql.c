@@ -303,7 +303,7 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 			/* check if ip address was successfully converted into binary data. */
 			if (inet_aton(row[count], (struct in_addr *) &client_ip) == 0) {
 
-				/* error on converting ip address.*/
+				/* error on converting ip address. */
 				error("Plugin %s: Client IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
 
 				/* return with error and terminate link. */
@@ -317,7 +317,7 @@ int32_t pppd__mysql_password(MYSQL **mysql, uint8_t *name, uint8_t *secret_name,
 			/* check if ip address was successfully converted into binary data. */
 			if (inet_aton(row[count], (struct in_addr *) &server_ip) == 0) {
 
-				/* error on converting ip address.*/
+				/* error on converting ip address. */
 				error("Plugin %s: Server IP address %s is not valid\n", PLUGIN_NAME_MYSQL, row[count]);
 
 				/* return with error and terminate link. */
