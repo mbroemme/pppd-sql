@@ -1,3 +1,25 @@
+Changes version 0.8.0 (2009-07-08)
+==================================
+
+    * Added support for fetching server ip address from database.
+
+    * Added support for evaluating the return value of the up and down
+      scripts.
+
+    * Renamed the following configuration options:
+
+      - mysql-column-ip -> mysql-column-client-ip
+      - pgsql-column-ip -> mysql-column-client-ip
+
+    * Six new PPP configuration options were added:
+
+      - mysql-ip-up-fail
+      - mysql-ip-down-fail
+      - mysql-column-server-ip
+      - pgsql-ip-up-fail
+      - pgsql-ip-down-fail
+      - pgsql-column-server-ip
+
 Changes version 0.7.0 (2009-01-28)
 ==================================
 
