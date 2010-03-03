@@ -1,3 +1,17 @@
+pppd-sql is licensed under the terms of the GNU General Public License
+version 3, with the following addition:
+
+"In addition, as a special exception, Maik Broemme gives permission to
+link the code of its release of pppd-sql with the OpenSSL project's
+"OpenSSL" library (or with modified versions of it that use the same
+license as the "OpenSSL" library), and distribute the linked
+executables.  You must obey the GNU General Public License in all
+respects for all of the code used other than "OpenSSL".  If you modify
+this file, you may extend this exception to your version of the file,
+but you are not obligated to do so.  If you do not wish to do so, delete
+this exception statement from your version."
+
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
